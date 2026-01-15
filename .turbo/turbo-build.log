@@ -1,0 +1,5 @@
+
+
+> effect-prisma-generator@0.1.0 build /home/ndichio/dev/pod-shopfloor/packages/effect-prisma-generator
+> tsc && chmod +x dist/index.js
+
