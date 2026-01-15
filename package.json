@@ -1,0 +1,40 @@
+{
+  "name": "prisma-effect-generator",
+  "version": "0.1.0",
+  "description": "Prisma generator for Effect",
+  "main": "dist/index.js",
+  "bin": {
+    "effect-prisma-generator": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc && chmod +x dist/index.js",
+    "test": "tsx scripts/runTests.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "prisma",
+    "generator",
+    "effect"
+  ],
+  "author": "Niccolo' Di Chio",
+  "license": "MIT",
+  "dependencies": {
+    "@effect/platform": "^0.94.1",
+    "@effect/platform-node": "^0.104.0",
+    "@effect/vitest": "^0.27.0",
+    "@prisma/generator-helper": "^7.2.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.17"
+  },
+  "devDependencies": {
+    "@prisma/client": "^7.2.0",
+    "@types/node": "^24.10.1",
+    "effect": "^3.19.14",
+    "prisma": "^7.2.0",
+    "tsx": "^4.20.6"
+  }
+}
