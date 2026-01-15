@@ -1,5 +1,11 @@
 # prisma-effect-generator
 
+## 0.0.3
+
+### Patch Changes
+
+- 0497c87: Change project scope
+
 ## 0.0.2
 
 ### Patch Changes
