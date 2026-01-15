@@ -1,5 +1,11 @@
 # prisma-generator-effect
 
+## 0.0.4
+
+### Patch Changes
+
+- a5db90a: Rename package to prisma-generator-effect
+
 ## 0.0.3
 
 ### Patch Changes
