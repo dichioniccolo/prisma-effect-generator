@@ -1,5 +1,11 @@
 # prisma-effect-generator
 
+## 0.0.2
+
+### Patch Changes
+
+- e3cc33d: First release
+
 ## 0.2.1
 
 ### Patch Changes
