@@ -14,11 +14,11 @@ A Prisma generator that creates a fully-typed, Effect-based service wrapper for 
 Install the generator as a development dependency:
 
 ```bash
-npm install -D prisma-effect-generator
+npm install -D prisma-generator-effect
 # or
-pnpm add -D prisma-effect-generator
+pnpm add -D prisma-generator-effect
 # or
-yarn add -D prisma-effect-generator
+yarn add -D prisma-generator-effect
 ```
 
 ## Configuration
@@ -33,7 +33,7 @@ generator client {
 }
 
 generator effect {
-  provider = "prisma-effect-generator"
+  provider = "prisma-generator-effect"
   output   = "./generated/effect" // relative to the schema.prisma file, e.g. prisma/generated/effect
   clientImportPath = "../client" // relative to the output path ^here (defaults to "@prisma/client")
 }
@@ -56,7 +56,7 @@ For ESM projects that require explicit file extensions in imports, use `importFi
 
 ```prisma
 generator effect {
-  provider            = "prisma-effect-generator"
+  provider            = "prisma-generator-effect"
   output              = "./generated/effect"
   clientImportPath    = "../client/index.js"
   errorImportPath     = "./errors#MyPrismaError"  // No extension needed here
@@ -254,7 +254,7 @@ If you want to use your own error type instead of the built-in tagged errors, yo
 
 ```prisma
 generator effect {
-  provider         = "prisma-effect-generator"
+  provider         = "prisma-generator-effect"
   output           = "./generated/effect"
   clientImportPath = "../client"
   errorImportPath  = "./errors#MyPrismaError"  // relative to schema.prisma

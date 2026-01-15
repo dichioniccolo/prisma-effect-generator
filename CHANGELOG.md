@@ -1,4 +1,4 @@
-# prisma-effect-generator
+# prisma-generator-effect
 
 ## 0.0.3
 
