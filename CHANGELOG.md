@@ -1,5 +1,11 @@
 # prisma-generator-effect
 
+## 1.0.0
+
+### Major Changes
+
+- ec9f795: release 1.0.0
+
 ## 0.0.4
 
 ### Patch Changes
