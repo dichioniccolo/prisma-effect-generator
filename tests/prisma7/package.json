@@ -8,14 +8,14 @@
   },
   "devDependencies": {
     "@effect/vitest": "^0.27.0",
-    "@prisma/adapter-libsql": "^7.0.0",
     "@libsql/client": "^0.14.0",
-    "prisma": "^7.0.0",
-    "effect": "^3.19.0",
-    "typescript": "^5.8.0",
-    "vitest": "^4.0.17"
+    "@prisma/adapter-libsql": "^7.4.0",
+    "effect": "^3.19.16",
+    "prisma": "^7.4.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
   },
   "dependencies": {
-    "@prisma/client": "^7.0.0"
+    "@prisma/client": "^7.4.0"
   }
 }

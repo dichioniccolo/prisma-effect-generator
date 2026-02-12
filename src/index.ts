@@ -898,32 +898,6 @@ export class Prisma extends Service<Prisma>()("Prisma", {
   ) => Layer.merge(PrismaClient.layerEffect(optionsEffect), Prisma.Default)
 
 }
-
-// ============================================================================
-// Deprecated aliases for backward compatibility
-// ============================================================================
-
-/**
- * @deprecated Use \`PrismaClient\` instead. Will be removed in next major version.
- */
-export const PrismaClientService = PrismaClient
-
-/**
- * @deprecated Use \`Prisma\` instead. Will be removed in next major version.
- */
-export const PrismaService = Prisma
-
-/**
- * @deprecated Use \`PrismaClient.layer()\` instead. Will be removed in next major version.
- */
-export const makePrismaLayer = PrismaClient.layer
-
-/**
- * @deprecated Use \`PrismaClient.layerEffect()\` instead. Will be removed in next major version.
- */
-export const makePrismaLayerEffect = PrismaClient.layerEffect
-
-
 `;
 }
 
@@ -1636,31 +1610,5 @@ export class Prisma extends Service<Prisma>()("Prisma", {
   ) => Layer.merge(PrismaClient.layerEffect(optionsEffect), Prisma.Default)
 
 }
-
-// ============================================================================
-// Deprecated aliases for backward compatibility
-// ============================================================================
-
-/**
- * @deprecated Use \`PrismaClient\` instead. Will be removed in next major version.
- */
-export const PrismaClientService = PrismaClient
-
-/**
- * @deprecated Use \`Prisma\` instead. Will be removed in next major version.
- */
-export const PrismaService = Prisma
-
-/**
- * @deprecated Use \`PrismaClient.layer()\` instead. Will be removed in next major version.
- */
-export const makePrismaLayer = PrismaClient.layer
-
-/**
- * @deprecated Use \`PrismaClient.layerEffect()\` instead. Will be removed in next major version.
- */
-export const makePrismaLayerEffect = PrismaClient.layerEffect
-
-
 `;
 }
