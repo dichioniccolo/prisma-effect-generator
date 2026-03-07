@@ -89,6 +89,7 @@ const main = async (): Promise<void> => {
   const prisma7Only = args.includes("--prisma7");
   const customErrorOnly = args.includes("--custom-error");
   const importExtensionOnly = args.includes("--import-extension");
+  const supportsManyAndReturnOnly = args.includes("--supports-many-and-return");
 
   if (clean || !(await exists("dist"))) {
     await run("pnpm", ["build"]);
@@ -143,16 +144,33 @@ const main = async (): Promise<void> => {
       keepDb,
     );
 
+  const runSupportsManyAndReturnTests = () =>
+    runSuite(
+      "tests/supports-many-and-return",
+      "Running supports-many-and-return tests",
+      async () => {
+        await run(
+          "pnpm",
+          ["exec", "prisma", "generate"],
+          "tests/supports-many-and-return",
+        );
+      },
+      keepDb,
+    );
+
   if (prisma7Only) {
     await runPrisma7Tests();
   } else if (customErrorOnly) {
     await runCustomErrorTests();
   } else if (importExtensionOnly) {
     await runImportExtensionTests();
+  } else if (supportsManyAndReturnOnly) {
+    await runSupportsManyAndReturnTests();
   } else {
     await runPrisma7Tests();
     await runCustomErrorTests();
     await runImportExtensionTests();
+    await runSupportsManyAndReturnTests();
   }
 };
 

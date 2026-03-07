@@ -10,3 +10,5 @@ tests/custom-error/generated
 tests/custom-error/node_modules
 tests/import-extension/generated
 tests/import-extension/node_modules
+tests/supports-many-and-return/generated
+tests/supports-many-and-return/node_modules

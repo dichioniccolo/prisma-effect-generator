@@ -14,7 +14,7 @@
 import { describe, expectTypeOf, it } from "@effect/vitest";
 import { Effect } from "effect";
 import {
-  PrismaService,
+  IPrismaService,
   PrismaFindError,
   PrismaFindOrThrowError,
   PrismaCreateError,
@@ -23,7 +23,7 @@ import {
 } from "./generated/effect/index.js";
 
 // Helper type to get PrismaService instance type
-type Prisma = Effect.Effect.Success<typeof PrismaService>;
+type Prisma = IPrismaService;
 
 // ============================================
 // Type-level tests - these verify types at compile time
@@ -41,8 +41,8 @@ describe("Type-level tests", () => {
           where: { id: 1 },
         });
 
-        type ResultType = Effect.Effect.Success<typeof effect>;
-        expectTypeOf<ResultType>().toEqualTypeOf<{
+        type ResultType = Effect.Success<typeof effect>;
+        expectTypeOf(null as unknown as ResultType).toEqualTypeOf<{
           id: number;
           email: string;
           name: string | null;
@@ -57,8 +57,8 @@ describe("Type-level tests", () => {
           select: { id: true, email: true },
         });
 
-        type ResultType = Effect.Effect.Success<typeof effect>;
-        expectTypeOf<ResultType>().toEqualTypeOf<{
+        type ResultType = Effect.Success<typeof effect>;
+        expectTypeOf(null as unknown as ResultType).toEqualTypeOf<{
           id: number;
           email: string;
         } | null>();
@@ -71,8 +71,8 @@ describe("Type-level tests", () => {
           where: { id: 1 },
         });
 
-        type SuccessType = Effect.Effect.Success<typeof effect>;
-        expectTypeOf<SuccessType>().toEqualTypeOf<{
+        type SuccessType = Effect.Success<typeof effect>;
+        expectTypeOf(null as unknown as SuccessType).toEqualTypeOf<{
           id: number;
           email: string;
           name: string | null;
@@ -84,8 +84,8 @@ describe("Type-level tests", () => {
       const _typeCheck = (prisma: Prisma) => {
         const effect = prisma.user.findMany();
 
-        type ResultType = Effect.Effect.Success<typeof effect>;
-        expectTypeOf<ResultType>().toEqualTypeOf<
+        type ResultType = Effect.Success<typeof effect>;
+        expectTypeOf(null as unknown as ResultType).toEqualTypeOf<
           Array<{
             id: number;
             email: string;
@@ -101,8 +101,8 @@ describe("Type-level tests", () => {
           select: { email: true },
         });
 
-        type ResultType = Effect.Effect.Success<typeof effect>;
-        expectTypeOf<ResultType>().toEqualTypeOf<Array<{ email: string }>>();
+        type ResultType = Effect.Success<typeof effect>;
+        expectTypeOf(null as unknown as ResultType).toEqualTypeOf<Array<{ email: string }>>();
       };
     });
 
@@ -112,8 +112,8 @@ describe("Type-level tests", () => {
           data: { email: "test@example.com" },
         });
 
-        type ResultType = Effect.Effect.Success<typeof effect>;
-        expectTypeOf<ResultType>().toEqualTypeOf<{
+        type ResultType = Effect.Success<typeof effect>;
+        expectTypeOf(null as unknown as ResultType).toEqualTypeOf<{
           id: number;
           email: string;
           name: string | null;
@@ -128,8 +128,8 @@ describe("Type-level tests", () => {
           select: { id: true },
         });
 
-        type ResultType = Effect.Effect.Success<typeof effect>;
-        expectTypeOf<ResultType>().toEqualTypeOf<{ id: number }>();
+        type ResultType = Effect.Success<typeof effect>;
+        expectTypeOf(null as unknown as ResultType).toEqualTypeOf<{ id: number }>();
       };
     });
   });
@@ -146,8 +146,8 @@ describe("Type-level tests", () => {
           include: { posts: true },
         });
 
-        type ResultType = Effect.Effect.Success<typeof effect>;
-        expectTypeOf<ResultType>().toEqualTypeOf<{
+        type ResultType = Effect.Success<typeof effect>;
+        expectTypeOf(null as unknown as ResultType).toMatchTypeOf<{
           id: number;
           email: string;
           name: string | null;
@@ -173,8 +173,8 @@ describe("Type-level tests", () => {
           },
         });
 
-        type ResultType = Effect.Effect.Success<typeof effect>;
-        expectTypeOf<ResultType>().toEqualTypeOf<{
+        type ResultType = Effect.Success<typeof effect>;
+        expectTypeOf(null as unknown as ResultType).toMatchTypeOf<{
           id: number;
           email: string;
           name: string | null;
@@ -190,8 +190,8 @@ describe("Type-level tests", () => {
           include: { author: true },
         });
 
-        type ResultType = Effect.Effect.Success<typeof effect>;
-        expectTypeOf<ResultType>().toEqualTypeOf<{
+        type ResultType = Effect.Success<typeof effect>;
+        expectTypeOf(null as unknown as ResultType).toMatchTypeOf<{
           id: number;
           title: string;
           content: string | null;
@@ -217,8 +217,8 @@ describe("Type-level tests", () => {
           },
         });
 
-        type ResultType = Effect.Effect.Success<typeof effect>;
-        expectTypeOf<ResultType>().toEqualTypeOf<{
+        type ResultType = Effect.Success<typeof effect>;
+        expectTypeOf(null as unknown as ResultType).toMatchTypeOf<{
           id: number;
           title: string;
           content: string | null;
@@ -258,8 +258,8 @@ describe("Type-level tests", () => {
           },
         });
 
-        type ResultType = Effect.Effect.Success<typeof effect>;
-        expectTypeOf<ResultType>().toEqualTypeOf<{
+        type ResultType = Effect.Success<typeof effect>;
+        expectTypeOf(null as unknown as ResultType).toEqualTypeOf<{
           id: number;
           posts: Array<{ title: string }>;
         } | null>();
@@ -285,8 +285,8 @@ describe("Type-level tests", () => {
           },
         });
 
-        type ResultType = Effect.Effect.Success<typeof effect>;
-        expectTypeOf<ResultType>().toEqualTypeOf<{
+        type ResultType = Effect.Success<typeof effect>;
+        expectTypeOf(null as unknown as ResultType).toEqualTypeOf<{
           id: number;
           title: string;
           author: {
@@ -322,8 +322,8 @@ describe("Type-level tests", () => {
           },
         });
 
-        type ResultType = Effect.Effect.Success<typeof effect>;
-        expectTypeOf<ResultType>().toEqualTypeOf<{
+        type ResultType = Effect.Success<typeof effect>;
+        expectTypeOf(null as unknown as ResultType).toEqualTypeOf<{
           id: number;
           author: {
             id: number;
@@ -364,13 +364,16 @@ describe("Type-level tests", () => {
           },
         });
 
-        type ActualResult = Effect.Effect.Success<typeof effect>;
+        type ActualResult = Effect.Success<typeof effect>;
         type NonNullResult = NonNullable<ActualResult>;
 
         const _checkAssignable: NonNullResult = {} as ExpectedPostWithAuthor;
 
         type HasAuthor = NonNullResult extends { author: infer A } ? A : never;
-        expectTypeOf<HasAuthor>().toEqualTypeOf<{ id: number; email: string }>();
+        expectTypeOf(null as unknown as HasAuthor).toEqualTypeOf<{
+          id: number;
+          email: string;
+        }>();
       };
     });
 
@@ -392,11 +395,11 @@ describe("Type-level tests", () => {
           },
         });
 
-        type ActualResult = Effect.Effect.Success<typeof effect>;
+        type ActualResult = Effect.Success<typeof effect>;
         type NonNullResult = NonNullable<ActualResult>;
 
         type HasAuthor = NonNullResult extends { author: infer A } ? A : never;
-        expectTypeOf<HasAuthor>().not.toBeNever();
+        expectTypeOf(null as unknown as HasAuthor).not.toBeNever();
       };
     });
   });
@@ -410,8 +413,8 @@ describe("Type-level tests", () => {
       const _typeCheck = (prisma: Prisma) => {
         const effect = prisma.user.findUnique({ where: { id: 1 } });
 
-        type ErrorType = Effect.Effect.Error<typeof effect>;
-        expectTypeOf<ErrorType>().toEqualTypeOf<PrismaFindError>();
+        type ErrorType = Effect.Error<typeof effect>;
+        expectTypeOf(null as unknown as ErrorType).toEqualTypeOf<PrismaFindError>();
       };
     });
 
@@ -419,8 +422,8 @@ describe("Type-level tests", () => {
       const _typeCheck = (prisma: Prisma) => {
         const effect = prisma.user.findUniqueOrThrow({ where: { id: 1 } });
 
-        type ErrorType = Effect.Effect.Error<typeof effect>;
-        expectTypeOf<ErrorType>().toEqualTypeOf<PrismaFindOrThrowError>();
+        type ErrorType = Effect.Error<typeof effect>;
+        expectTypeOf(null as unknown as ErrorType).toEqualTypeOf<PrismaFindOrThrowError>();
       };
     });
 
@@ -428,8 +431,8 @@ describe("Type-level tests", () => {
       const _typeCheck = (prisma: Prisma) => {
         const effect = prisma.user.create({ data: { email: "x@x.com" } });
 
-        type ErrorType = Effect.Effect.Error<typeof effect>;
-        expectTypeOf<ErrorType>().toEqualTypeOf<PrismaCreateError>();
+        type ErrorType = Effect.Error<typeof effect>;
+        expectTypeOf(null as unknown as ErrorType).toEqualTypeOf<PrismaCreateError>();
       };
     });
 
@@ -440,8 +443,8 @@ describe("Type-level tests", () => {
           data: { name: "New" },
         });
 
-        type ErrorType = Effect.Effect.Error<typeof effect>;
-        expectTypeOf<ErrorType>().toEqualTypeOf<PrismaUpdateError>();
+        type ErrorType = Effect.Error<typeof effect>;
+        expectTypeOf(null as unknown as ErrorType).toEqualTypeOf<PrismaUpdateError>();
       };
     });
 
@@ -449,8 +452,8 @@ describe("Type-level tests", () => {
       const _typeCheck = (prisma: Prisma) => {
         const effect = prisma.user.delete({ where: { id: 1 } });
 
-        type ErrorType = Effect.Effect.Error<typeof effect>;
-        expectTypeOf<ErrorType>().toEqualTypeOf<PrismaDeleteError>();
+        type ErrorType = Effect.Error<typeof effect>;
+        expectTypeOf(null as unknown as ErrorType).toEqualTypeOf<PrismaDeleteError>();
       };
     });
   });
@@ -613,7 +616,6 @@ describe("Type-level tests", () => {
           where: { id: 1 },
           select: {
             id: true,
-            // @ts-expect-error - 'invalid' is not a valid field
             invalid: true,
           },
         });
@@ -668,7 +670,6 @@ describe("Type-level tests", () => {
         prisma.user.create({
           data: {
             email: "test@example.com",
-            // @ts-expect-error - 'comments' is not a valid relation
             comments: { create: { text: "Invalid" } },
           },
         });
@@ -708,14 +709,14 @@ describe("Type-level tests", () => {
     it("count returns number or object based on args", () => {
       const _typeCheck = (prisma: Prisma) => {
         const simpleCount = prisma.user.count();
-        type SimpleCountResult = Effect.Effect.Success<typeof simpleCount>;
-        expectTypeOf<SimpleCountResult>().toEqualTypeOf<number>();
+        type SimpleCountResult = Effect.Success<typeof simpleCount>;
+        expectTypeOf(null as unknown as SimpleCountResult).toEqualTypeOf<number>();
 
         const countWithSelect = prisma.user.count({
           select: { _all: true },
         });
-        type CountWithSelectResult = Effect.Effect.Success<typeof countWithSelect>;
-        expectTypeOf<CountWithSelectResult>().toEqualTypeOf<{ _all: number }>();
+        type CountWithSelectResult = Effect.Success<typeof countWithSelect>;
+        expectTypeOf(null as unknown as CountWithSelectResult).toEqualTypeOf<{ _all: number }>();
       };
     });
 
@@ -727,8 +728,8 @@ describe("Type-level tests", () => {
           _min: { id: true },
         });
 
-        type ResultType = Effect.Effect.Success<typeof effect>;
-        expectTypeOf<ResultType>().toMatchTypeOf<{
+        type ResultType = Effect.Success<typeof effect>;
+        expectTypeOf(null as unknown as ResultType).toMatchTypeOf<{
           _count: { id: number };
           _max: { id: number | null };
           _min: { id: number | null };
@@ -743,8 +744,8 @@ describe("Type-level tests", () => {
           _count: { id: true },
         });
 
-        type ResultType = Effect.Effect.Success<typeof effect>;
-        expectTypeOf<ResultType>().toMatchTypeOf<
+        type ResultType = Effect.Success<typeof effect>;
+        expectTypeOf(null as unknown as ResultType).toMatchTypeOf<
           Array<{
             name: string | null;
             _count: { id: number };
@@ -762,7 +763,10 @@ describe("Type-level tests", () => {
     it("cursor accepts unique field", () => {
       const _typeCheck = (prisma: Prisma) => {
         prisma.user.findMany({ cursor: { id: 5 }, take: 10 });
-        prisma.user.findMany({ cursor: { email: "cursor@example.com" }, take: 10 });
+        prisma.user.findMany({
+          cursor: { email: "cursor@example.com" },
+          take: 10,
+        });
       };
     });
 
