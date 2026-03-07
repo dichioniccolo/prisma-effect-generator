@@ -16,6 +16,10 @@
     "prepublishOnly": "npm run build",
     "release": "pnpm changeset version && pnpm changeset publish"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dichioniccolo/prisma-effect-generator.git"
+  },
   "keywords": [
     "prisma",
     "generator",
