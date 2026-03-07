@@ -1,6 +1,6 @@
 {
   "name": "prisma-generator-effect",
-  "version": "1.0.0",
+  "version": "1.1.0-beta.0",
   "description": "Prisma generator for Effect",
   "main": "dist/index.js",
   "bin": {
