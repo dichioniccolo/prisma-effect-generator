@@ -1,0 +1,8 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "prisma-generator-effect": "1.0.0"
+  },
+  "changesets": []
+}
