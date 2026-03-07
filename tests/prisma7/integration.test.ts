@@ -1,9 +1,8 @@
 import { describe, expect, expectTypeOf, it } from "@effect/vitest";
-import { Data, Effect, Layer } from "effect";
+import { Data, Effect, pipe } from "effect";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
 import {
   Prisma,
-  PrismaClient,
   PrismaUniqueConstraintError,
   PrismaRecordNotFoundError,
   PrismaForeignKeyConstraintError,
@@ -37,7 +36,7 @@ describe("Prisma 7 Effect Generator", () => {
 
         // Cleanup
         yield* prisma.user.delete({ where: { id: user.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("findUnique - should find a record by unique field", () =>
@@ -69,7 +68,7 @@ describe("Prisma 7 Effect Generator", () => {
 
         // Cleanup
         yield* prisma.user.delete({ where: { id: created.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("findUniqueOrThrow - should throw when not found", () =>
@@ -81,7 +80,7 @@ describe("Prisma 7 Effect Generator", () => {
           .pipe(Effect.flip);
 
         expect(error).toBeInstanceOf(PrismaRecordNotFoundError);
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("findFirstOrThrow - should throw when not found", () =>
@@ -93,7 +92,7 @@ describe("Prisma 7 Effect Generator", () => {
           .pipe(Effect.flip);
 
         expect(error).toBeInstanceOf(PrismaRecordNotFoundError);
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("findFirstOrThrow - should return record when found", () =>
@@ -113,7 +112,7 @@ describe("Prisma 7 Effect Generator", () => {
 
         // Cleanup
         yield* prisma.user.delete({ where: { id: created.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("findFirst - should find first matching record", () =>
@@ -141,7 +140,7 @@ describe("Prisma 7 Effect Generator", () => {
         yield* prisma.user.deleteMany({
           where: { email: { startsWith: prefix } },
         });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("findMany - should find multiple records with filters", () =>
@@ -171,7 +170,7 @@ describe("Prisma 7 Effect Generator", () => {
         yield* prisma.user.deleteMany({
           where: { email: { startsWith: prefix } },
         });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("update - should update a record", () =>
@@ -193,7 +192,7 @@ describe("Prisma 7 Effect Generator", () => {
 
         // Cleanup
         yield* prisma.user.delete({ where: { id: user.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("upsert - should create or update", () =>
@@ -222,7 +221,7 @@ describe("Prisma 7 Effect Generator", () => {
 
         // Cleanup
         yield* prisma.user.delete({ where: { id: created.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("delete - should delete a record", () =>
@@ -245,7 +244,7 @@ describe("Prisma 7 Effect Generator", () => {
           where: { id: user.id },
         });
         expect(found).toBeNull();
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
   });
 
@@ -272,7 +271,7 @@ describe("Prisma 7 Effect Generator", () => {
         yield* prisma.user.deleteMany({
           where: { email: { startsWith: prefix } },
         });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("createManyAndReturn - should create and return records", () =>
@@ -296,7 +295,7 @@ describe("Prisma 7 Effect Generator", () => {
         yield* prisma.user.deleteMany({
           where: { email: { startsWith: prefix } },
         });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("createManyAndReturn - should support select", () =>
@@ -319,7 +318,7 @@ describe("Prisma 7 Effect Generator", () => {
         yield* prisma.user.deleteMany({
           where: { email: { startsWith: prefix } },
         });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("updateMany - should update multiple records", () =>
@@ -351,7 +350,7 @@ describe("Prisma 7 Effect Generator", () => {
         yield* prisma.user.deleteMany({
           where: { email: { startsWith: prefix } },
         });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("updateManyAndReturn - should update and return records", () =>
@@ -379,7 +378,7 @@ describe("Prisma 7 Effect Generator", () => {
         yield* prisma.user.deleteMany({
           where: { email: { startsWith: prefix } },
         });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("updateManyAndReturn - should support select", () =>
@@ -406,7 +405,7 @@ describe("Prisma 7 Effect Generator", () => {
         yield* prisma.user.deleteMany({
           where: { email: { startsWith: prefix } },
         });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("deleteMany - should delete multiple records", () =>
@@ -426,7 +425,7 @@ describe("Prisma 7 Effect Generator", () => {
         });
 
         expect(result.count).toBe(2);
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
   });
 
@@ -458,7 +457,7 @@ describe("Prisma 7 Effect Generator", () => {
         yield* prisma.user.deleteMany({
           where: { email: { startsWith: prefix } },
         });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("aggregate - should aggregate numeric fields", () =>
@@ -488,7 +487,7 @@ describe("Prisma 7 Effect Generator", () => {
         yield* prisma.user.deleteMany({
           where: { email: { startsWith: prefix } },
         });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("groupBy - should group records", () =>
@@ -518,7 +517,7 @@ describe("Prisma 7 Effect Generator", () => {
         yield* prisma.user.deleteMany({
           where: { email: { startsWith: prefix } },
         });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
   });
 
@@ -563,7 +562,7 @@ describe("Prisma 7 Effect Generator", () => {
         yield* prisma.user.deleteMany({
           where: { email: { startsWith: prefix } },
         });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("should support cursor-based pagination", () =>
@@ -619,7 +618,7 @@ describe("Prisma 7 Effect Generator", () => {
         yield* prisma.user.deleteMany({
           where: { email: { startsWith: prefix } },
         });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("should support reverse pagination with negative take", () =>
@@ -664,7 +663,7 @@ describe("Prisma 7 Effect Generator", () => {
         yield* prisma.user.deleteMany({
           where: { email: { startsWith: prefix } },
         });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
   });
 
@@ -699,7 +698,7 @@ describe("Prisma 7 Effect Generator", () => {
         // Cleanup
         yield* prisma.post.deleteMany({ where: { authorId: user.id } });
         yield* prisma.user.delete({ where: { id: user.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("should query with include", () =>
@@ -729,7 +728,7 @@ describe("Prisma 7 Effect Generator", () => {
         // Cleanup
         yield* prisma.post.deleteMany({ where: { authorId: user.id } });
         yield* prisma.user.delete({ where: { id: user.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("should query nested relations", () =>
@@ -758,7 +757,7 @@ describe("Prisma 7 Effect Generator", () => {
         // Cleanup
         yield* prisma.post.deleteMany({ where: { authorId: user.id } });
         yield* prisma.user.delete({ where: { id: user.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("should update nested relations", () =>
@@ -802,7 +801,7 @@ describe("Prisma 7 Effect Generator", () => {
         // Cleanup
         yield* prisma.post.deleteMany({ where: { authorId: user.id } });
         yield* prisma.user.delete({ where: { id: user.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("should delete nested relations via cascade or explicit", () =>
@@ -841,7 +840,7 @@ describe("Prisma 7 Effect Generator", () => {
         // Cleanup
         yield* prisma.post.deleteMany({ where: { authorId: user.id } });
         yield* prisma.user.delete({ where: { id: user.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("should connect/disconnect relations", () =>
@@ -882,7 +881,7 @@ describe("Prisma 7 Effect Generator", () => {
         yield* prisma.post.delete({ where: { id: post.id } });
         yield* prisma.user.delete({ where: { id: user1.id } });
         yield* prisma.user.delete({ where: { id: user2.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
   });
 
@@ -905,7 +904,7 @@ describe("Prisma 7 Effect Generator", () => {
               data: { title: "TX Post", authorId: user.id },
             });
             return user;
-          })
+          }),
         );
 
         // Verify both were created
@@ -918,7 +917,7 @@ describe("Prisma 7 Effect Generator", () => {
         // Cleanup
         yield* prisma.post.deleteMany({ where: { authorId: result.id } });
         yield* prisma.user.delete({ where: { id: result.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("should rollback on failure", () =>
@@ -932,7 +931,7 @@ describe("Prisma 7 Effect Generator", () => {
               data: { email, name: "Will Rollback" },
             });
             yield* Effect.fail("Intentional failure");
-          })
+          }),
         );
 
         yield* Effect.flip(program);
@@ -940,7 +939,7 @@ describe("Prisma 7 Effect Generator", () => {
         // Verify rollback
         const user = yield* prisma.user.findUnique({ where: { email } });
         expect(user).toBeNull();
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("should rollback nested transactions on outer failure", () =>
@@ -959,10 +958,10 @@ describe("Prisma 7 Effect Generator", () => {
                 yield* prisma.user.create({
                   data: { email: email2, name: "Inner" },
                 });
-              })
+              }),
             );
             yield* Effect.fail("Outer failure");
-          })
+          }),
         );
 
         yield* Effect.flip(program);
@@ -972,7 +971,7 @@ describe("Prisma 7 Effect Generator", () => {
           where: { email: { in: [email1, email2] } },
         });
         expect(users).toHaveLength(0);
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("nested tx: inner fails uncaught - both rollback", () =>
@@ -994,14 +993,14 @@ describe("Prisma 7 Effect Generator", () => {
                   data: { email: `${prefix}-inner@example.com`, name: "Inner" },
                 });
                 yield* Effect.fail("Inner failure");
-              })
+              }),
             );
 
             // This line never executes
             yield* prisma.user.create({
               data: { email: `${prefix}-after@example.com`, name: "After" },
             });
-          })
+          }),
         );
 
         yield* Effect.flip(program);
@@ -1011,7 +1010,7 @@ describe("Prisma 7 Effect Generator", () => {
           where: { email: { startsWith: prefix } },
         });
         expect(users).toHaveLength(0);
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("nested tx: inner succeeds, outer fails - both rollback", () =>
@@ -1035,7 +1034,7 @@ describe("Prisma 7 Effect Generator", () => {
                   data: { title: "Inner Post", authorId: user.id },
                 });
                 return user;
-              })
+              }),
             );
 
             // Inner returned successfully
@@ -1043,7 +1042,7 @@ describe("Prisma 7 Effect Generator", () => {
 
             // But outer fails AFTER inner completed
             yield* Effect.fail("Outer failure after inner success");
-          })
+          }),
         );
 
         yield* Effect.flip(program);
@@ -1058,7 +1057,7 @@ describe("Prisma 7 Effect Generator", () => {
           where: { title: "Inner Post" },
         });
         expect(posts).toHaveLength(0);
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("nested tx: both succeed - both commit", () =>
@@ -1077,11 +1076,11 @@ describe("Prisma 7 Effect Generator", () => {
                 return yield* prisma.user.create({
                   data: { email: `${prefix}-inner@example.com`, name: "Inner" },
                 });
-              })
+              }),
             );
 
             return { outerUser, innerUser };
-          })
+          }),
         );
 
         // Both should be committed
@@ -1097,7 +1096,7 @@ describe("Prisma 7 Effect Generator", () => {
         yield* prisma.user.deleteMany({
           where: { email: { startsWith: prefix } },
         });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect(
@@ -1131,11 +1130,11 @@ describe("Prisma 7 Effect Generator", () => {
                         },
                       });
                       yield* Effect.fail("Deepest failure");
-                    })
+                    }),
                   );
-                })
+                }),
               );
-            })
+            }),
           );
 
           yield* Effect.flip(program);
@@ -1145,7 +1144,7 @@ describe("Prisma 7 Effect Generator", () => {
             where: { email: { startsWith: prefix } },
           });
           expect(users).toHaveLength(0);
-        }).pipe(Effect.provide(MainLayer))
+        }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect(
@@ -1175,9 +1174,14 @@ describe("Prisma 7 Effect Generator", () => {
                       },
                     });
                     yield* Effect.fail("Inner failure");
-                  })
+                  }),
                 )
-                .pipe(Effect.catchAll(() => Effect.succeed("inner-caught")));
+                .pipe(
+                  Effect.catchIf(
+                    () => true,
+                    () => Effect.succeed("inner-caught"),
+                  ),
+                );
 
               expect(innerResult).toBe("inner-caught");
 
@@ -1187,7 +1191,7 @@ describe("Prisma 7 Effect Generator", () => {
               });
 
               return outerUser;
-            })
+            }),
           );
 
           // ALL THREE users are committed because nested txs share the same db transaction
@@ -1204,7 +1208,7 @@ describe("Prisma 7 Effect Generator", () => {
           yield* prisma.user.deleteMany({
             where: { email: { startsWith: prefix } },
           });
-        }).pipe(Effect.provide(MainLayer))
+        }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("nested tx: inner creates data visible to outer within tx", () =>
@@ -1220,7 +1224,7 @@ describe("Prisma 7 Effect Generator", () => {
                 return yield* prisma.user.create({
                   data: { email: `${prefix}@example.com`, name: "Inner User" },
                 });
-              })
+              }),
             );
 
             // Outer can see and use the inner's created user
@@ -1238,7 +1242,7 @@ describe("Prisma 7 Effect Generator", () => {
             expect(userWithPosts?.posts[0].title).toBe("Outer's Post");
 
             return { innerUser, post };
-          })
+          }),
         );
 
         // Both should be committed
@@ -1251,7 +1255,7 @@ describe("Prisma 7 Effect Generator", () => {
         // Cleanup
         yield* prisma.post.delete({ where: { id: result.post.id } });
         yield* prisma.user.delete({ where: { id: result.innerUser.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect(
@@ -1275,17 +1279,17 @@ describe("Prisma 7 Effect Generator", () => {
                     data: { title: postTitle, authorId: user.id },
                   });
                   return { user, post };
-                })
+                }),
               );
             });
 
           // Call the function OUTSIDE a transaction - works normally
           const standalone = yield* createUserWithPost(
             `${prefix}-standalone@example.com`,
-            "Standalone Post"
+            "Standalone Post",
           );
           expect(standalone.user.email).toBe(
-            `${prefix}-standalone@example.com`
+            `${prefix}-standalone@example.com`,
           );
 
           // Now call from INSIDE an outer transaction
@@ -1303,14 +1307,14 @@ describe("Prisma 7 Effect Generator", () => {
                 // Call the function - its internal $transaction joins the outer one
                 const fromFn = yield* createUserWithPost(
                   `${prefix}-from-fn@example.com`,
-                  "Function Post"
+                  "Function Post",
                 );
 
                 // Now fail the outer transaction
                 yield* Effect.fail("Outer failure after function call");
 
                 return { outerUser, fromFn };
-              })
+              }),
             )
             .pipe(Effect.flip);
 
@@ -1338,7 +1342,7 @@ describe("Prisma 7 Effect Generator", () => {
           // Cleanup
           yield* prisma.post.delete({ where: { id: standalone.post.id } });
           yield* prisma.user.delete({ where: { id: standalone.user.id } });
-        }).pipe(Effect.provide(MainLayer))
+        }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect(
@@ -1360,7 +1364,7 @@ describe("Prisma 7 Effect Generator", () => {
                     });
                     // In a real app, might create a Profile record too
                     return user;
-                  })
+                  }),
                 );
               }),
           };
@@ -1374,7 +1378,7 @@ describe("Prisma 7 Effect Generator", () => {
                     return yield* p.post.create({
                       data: { title, authorId: userId },
                     });
-                  })
+                  }),
                 );
               }),
           };
@@ -1383,12 +1387,12 @@ describe("Prisma 7 Effect Generator", () => {
           const result = yield* prisma.$transaction(
             Effect.gen(function* () {
               const user = yield* UserService.createWithProfile(
-                `${prefix}@example.com`
+                `${prefix}@example.com`,
               );
               const post1 = yield* PostService.createForUser(user.id, "Post 1");
               const post2 = yield* PostService.createForUser(user.id, "Post 2");
               return { user, posts: [post1, post2] };
-            })
+            }),
           );
 
           // All should be committed together
@@ -1404,7 +1408,7 @@ describe("Prisma 7 Effect Generator", () => {
             where: { authorId: result.user.id },
           });
           yield* prisma.user.delete({ where: { id: result.user.id } });
-        }).pipe(Effect.provide(MainLayer))
+        }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect(
@@ -1425,7 +1429,7 @@ describe("Prisma 7 Effect Generator", () => {
                       data: { email, name: "Will Fail" },
                     });
                     yield* Effect.fail("Service failure");
-                  })
+                  }),
                 );
               }),
           };
@@ -1439,14 +1443,14 @@ describe("Prisma 7 Effect Generator", () => {
 
               // Call failing service (uncaught)
               yield* FailingService.createAndFail(
-                `${prefix}-failing@example.com`
+                `${prefix}-failing@example.com`,
               );
 
               // Never reached
               yield* prisma.user.create({
                 data: { email: `${prefix}-after@example.com`, name: "After" },
               });
-            })
+            }),
           );
 
           yield* Effect.flip(program);
@@ -1456,7 +1460,7 @@ describe("Prisma 7 Effect Generator", () => {
             where: { email: { startsWith: prefix } },
           });
           expect(users).toHaveLength(0);
-        }).pipe(Effect.provide(MainLayer))
+        }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("should preserve custom error types in transactions", () =>
@@ -1475,7 +1479,7 @@ describe("Prisma 7 Effect Generator", () => {
         if (error instanceof CustomError) {
           expect(error.message).toBe("custom");
         }
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("should rollback on Prisma errors within transaction", () =>
@@ -1499,7 +1503,7 @@ describe("Prisma 7 Effect Generator", () => {
             yield* prisma.user.create({
               data: { email, name: "Duplicate" },
             });
-          })
+          }),
         );
 
         const error = yield* Effect.flip(program);
@@ -1515,7 +1519,7 @@ describe("Prisma 7 Effect Generator", () => {
 
         // Cleanup
         yield* prisma.user.delete({ where: { id: existingUser.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("should handle caught inner transaction failure", () =>
@@ -1533,11 +1537,16 @@ describe("Prisma 7 Effect Generator", () => {
             // Inner transaction fails but we catch it
             const innerResult = yield* prisma
               .$transaction(Effect.fail("Inner failure"))
-              .pipe(Effect.catchAll(() => Effect.succeed("caught")));
+              .pipe(
+                Effect.catchIf(
+                  () => true,
+                  () => Effect.succeed("caught"),
+                ),
+              );
 
             expect(innerResult).toBe("caught");
             return user;
-          })
+          }),
         );
 
         // Outer user should still be committed
@@ -1549,7 +1558,7 @@ describe("Prisma 7 Effect Generator", () => {
 
         // Cleanup
         yield* prisma.user.delete({ where: { id: result.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("should persist data between sequential transactions", () =>
@@ -1563,7 +1572,7 @@ describe("Prisma 7 Effect Generator", () => {
             return yield* prisma.user.create({
               data: { email, name: "Sequential User" },
             });
-          })
+          }),
         );
 
         // Second transaction should see the user
@@ -1572,7 +1581,7 @@ describe("Prisma 7 Effect Generator", () => {
             return yield* prisma.user.findUnique({
               where: { id: user.id },
             });
-          })
+          }),
         );
 
         expect(foundInTx).not.toBeNull();
@@ -1580,7 +1589,7 @@ describe("Prisma 7 Effect Generator", () => {
 
         // Cleanup
         yield* prisma.user.delete({ where: { id: user.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect(
@@ -1623,7 +1632,7 @@ describe("Prisma 7 Effect Generator", () => {
                 created: count,
                 allUpdated: users.every((u) => u.name === "Updated"),
               };
-            })
+            }),
           );
 
           expect(stats.created).toBe(3);
@@ -1633,7 +1642,7 @@ describe("Prisma 7 Effect Generator", () => {
           yield* prisma.user.deleteMany({
             where: { email: { startsWith: prefix } },
           });
-        }).pipe(Effect.provide(MainLayer))
+        }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect(
@@ -1668,7 +1677,7 @@ describe("Prisma 7 Effect Generator", () => {
 
               // Fail at the end - everything should rollback
               yield* Effect.fail("Late failure");
-            })
+            }),
           );
 
           yield* Effect.flip(program);
@@ -1684,7 +1693,7 @@ describe("Prisma 7 Effect Generator", () => {
             where: { title: { in: ["Post 1", "Post 2"] } },
           });
           expect(posts).toHaveLength(0);
-        }).pipe(Effect.provide(MainLayer))
+        }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect(
@@ -1704,7 +1713,7 @@ describe("Prisma 7 Effect Generator", () => {
                 },
               });
               yield* Effect.fail("Effect failure");
-            })
+            }),
           );
 
           yield* Effect.flip(effectFailProgram);
@@ -1725,7 +1734,7 @@ describe("Prisma 7 Effect Generator", () => {
               });
               // This will throw PrismaRecordNotFoundError
               yield* prisma.user.findUniqueOrThrow({ where: { id: 999999 } });
-            })
+            }),
           );
 
           const error = yield* Effect.flip(prismaErrorProgram);
@@ -1735,7 +1744,7 @@ describe("Prisma 7 Effect Generator", () => {
             where: { email: `${prefix}-prisma@example.com` },
           });
           expect(prismaUsers).toHaveLength(0);
-        }).pipe(Effect.provide(MainLayer))
+        }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("should rollback on findFirstOrThrow error in transaction", () =>
@@ -1762,7 +1771,7 @@ describe("Prisma 7 Effect Generator", () => {
             yield* prisma.post.findFirstOrThrow({
               where: { title: "This Post Does Not Exist" },
             });
-          })
+          }),
         );
 
         const error = yield* Effect.flip(program);
@@ -1778,7 +1787,7 @@ describe("Prisma 7 Effect Generator", () => {
           where: { title: "Orphan Post" },
         });
         expect(posts).toHaveLength(0);
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect(
@@ -1800,7 +1809,7 @@ describe("Prisma 7 Effect Generator", () => {
                 where: { id: 999999 },
                 data: { name: "Won't Work" },
               });
-            })
+            }),
           );
 
           const error = yield* Effect.flip(program);
@@ -1811,7 +1820,7 @@ describe("Prisma 7 Effect Generator", () => {
             where: { email: { startsWith: prefix } },
           });
           expect(users).toHaveLength(0);
-        }).pipe(Effect.provide(MainLayer))
+        }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("should NOT rollback when catching findUniqueOrThrow error", () =>
@@ -1830,15 +1839,18 @@ describe("Prisma 7 Effect Generator", () => {
             const maybeUser = yield* prisma.user
               .findUniqueOrThrow({ where: { id: 999999 } })
               .pipe(
-                Effect.catchAll((error) => {
-                  expect(error).toBeInstanceOf(PrismaRecordNotFoundError);
-                  return Effect.succeed(null);
-                })
+                Effect.catchIf(
+                  () => true,
+                  (error) => {
+                    expect(error).toBeInstanceOf(PrismaRecordNotFoundError);
+                    return Effect.succeed(null);
+                  },
+                ),
               );
 
             expect(maybeUser).toBeNull();
             return user;
-          })
+          }),
         );
 
         // User SHOULD be committed because we caught the error
@@ -1850,7 +1862,7 @@ describe("Prisma 7 Effect Generator", () => {
 
         // Cleanup
         yield* prisma.user.delete({ where: { id: result.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("should NOT rollback when catching findFirstOrThrow error", () =>
@@ -1875,13 +1887,13 @@ describe("Prisma 7 Effect Generator", () => {
               .findFirstOrThrow({ where: { title: "Ghost Post" } })
               .pipe(
                 Effect.catchTag("PrismaRecordNotFoundError", () =>
-                  Effect.succeed(null)
-                )
+                  Effect.succeed(null),
+                ),
               );
 
             expect(maybePost).toBeNull();
             return user;
-          })
+          }),
         );
 
         // Both user and post SHOULD be committed
@@ -1896,7 +1908,7 @@ describe("Prisma 7 Effect Generator", () => {
         // Cleanup
         yield* prisma.post.deleteMany({ where: { authorId: result.id } });
         yield* prisma.user.delete({ where: { id: result.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect(
@@ -1922,11 +1934,16 @@ describe("Prisma 7 Effect Generator", () => {
                   where: { id: 999999 },
                   data: { name: "Ghost" },
                 })
-                .pipe(Effect.catchAll(() => Effect.succeed("caught")));
+                .pipe(
+                  Effect.catchIf(
+                    () => true,
+                    () => Effect.succeed("caught"),
+                  ),
+                );
 
               expect(updateResult).toBe("caught");
               return user;
-            })
+            }),
           );
 
           // User SHOULD be committed
@@ -1937,7 +1954,7 @@ describe("Prisma 7 Effect Generator", () => {
 
           // Cleanup
           yield* prisma.user.delete({ where: { id: result.id } });
-        }).pipe(Effect.provide(MainLayer))
+        }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("should NOT rollback when catching unique constraint error", () =>
@@ -1965,12 +1982,12 @@ describe("Prisma 7 Effect Generator", () => {
                 Effect.catchTag("PrismaUniqueConstraintError", (error) => {
                   expect(error.cause.code).toBe("P2002");
                   return Effect.succeed("caught-duplicate");
-                })
+                }),
               );
 
             expect(duplicateResult).toBe("caught-duplicate");
             return newUser;
-          })
+          }),
         );
 
         // New user SHOULD be committed
@@ -1983,7 +2000,7 @@ describe("Prisma 7 Effect Generator", () => {
         // Cleanup
         yield* prisma.user.delete({ where: { id: existing.id } });
         yield* prisma.user.delete({ where: { id: result.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("should NOT rollback when catching FK constraint error", () =>
@@ -2007,12 +2024,12 @@ describe("Prisma 7 Effect Generator", () => {
                 Effect.catchTag("PrismaForeignKeyConstraintError", (error) => {
                   expect(error.cause.code).toBe("P2003");
                   return Effect.succeed("caught-fk");
-                })
+                }),
               );
 
             expect(postResult).toBe("caught-fk");
             return user;
-          })
+          }),
         );
 
         // User SHOULD be committed
@@ -2023,7 +2040,7 @@ describe("Prisma 7 Effect Generator", () => {
 
         // Cleanup
         yield* prisma.user.delete({ where: { id: result.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect(
@@ -2053,12 +2070,12 @@ describe("Prisma 7 Effect Generator", () => {
                         email: `${prefix}-2@example.com`,
                         name: "Fallback User",
                       },
-                    })
-                  )
+                    }),
+                  ),
                 );
 
               return { user1, user2 };
-            })
+            }),
           );
 
           // Both users SHOULD exist
@@ -2075,7 +2092,92 @@ describe("Prisma 7 Effect Generator", () => {
           yield* prisma.user.deleteMany({
             where: { email: { startsWith: prefix } },
           });
-        }).pipe(Effect.provide(MainLayer))
+        }).pipe(Effect.provide(MainLayer)),
+    );
+
+    it.effect("should support $transactionWith with custom options", () =>
+      Effect.gen(function* () {
+        const prisma = yield* Prisma;
+        const email = `tx-with-options-${Date.now()}@example.com`;
+
+        // Use $transactionWith with custom timeout and maxWait
+        // Note: SQLite doesn't support isolation levels, so we test timeout/maxWait instead
+        const result = yield* prisma.$transactionWith(
+          Effect.gen(function* () {
+            const user = yield* prisma.user.create({
+              data: { email, name: "TX With Options" },
+            });
+            yield* prisma.post.create({
+              data: { title: "TX Post With Options", authorId: user.id },
+            });
+            return user;
+          }),
+          { timeout: 10000, maxWait: 5000 },
+        );
+
+        // Verify both were created
+        const user = yield* prisma.user.findUnique({
+          where: { id: result.id },
+          include: { posts: true },
+        });
+        expect(user?.posts).toHaveLength(1);
+
+        // Cleanup
+        yield* prisma.post.deleteMany({ where: { authorId: result.id } });
+        yield* prisma.user.delete({ where: { id: result.id } });
+      }).pipe(Effect.provide(MainLayer)),
+    );
+
+    it.effect(
+      "should support $isolatedTransactionWith with custom options",
+      () =>
+        Effect.gen(function* () {
+          const prisma = yield* Prisma;
+          const email = `tx-isolated-with-${Date.now()}@example.com`;
+
+          // Simple test: just verify $isolatedTransactionWith accepts options and works
+          // Note: SQLite doesn't support isolation levels, so we test timeout/maxWait instead
+          const result = yield* prisma.$isolatedTransactionWith(
+            Effect.gen(function* () {
+              const user = yield* prisma.user.create({
+                data: { email, name: "Isolated With Options" },
+              });
+              return user;
+            }),
+            { timeout: 10000, maxWait: 5000 },
+          );
+
+          expect(result.email).toBe(email);
+
+          // Cleanup
+          yield* prisma.user.delete({ where: { id: result.id } });
+        }).pipe(Effect.provide(MainLayer)),
+    );
+
+    it.effect("should enable point-free programming style", () =>
+      Effect.gen(function* () {
+        const prisma = yield* Prisma;
+        const email = `tx-point-free-${Date.now()}@example.com`;
+
+        // Define reusable transaction boundary
+        const withTransaction = prisma.$transaction;
+
+        // Create effect to run in transaction
+        const createUserEffect = Effect.gen(function* () {
+          const user = yield* prisma.user.create({
+            data: { email, name: "Point Free User" },
+          });
+          return user;
+        });
+
+        // Use point-free style with pipe
+        const result = yield* pipe(createUserEffect, withTransaction);
+
+        expect(result.email).toBe(email);
+
+        // Cleanup
+        yield* prisma.user.delete({ where: { id: result.id } });
+      }).pipe(Effect.provide(MainLayer)),
     );
   });
 
@@ -2102,7 +2204,7 @@ describe("Prisma 7 Effect Generator", () => {
 
         // Cleanup
         yield* prisma.user.delete({ where: { email } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect(
@@ -2122,7 +2224,7 @@ describe("Prisma 7 Effect Generator", () => {
             .pipe(Effect.flip);
 
           expect(findFirstError).toBeInstanceOf(PrismaRecordNotFoundError);
-        }).pipe(Effect.provide(MainLayer))
+        }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect(
@@ -2145,7 +2247,7 @@ describe("Prisma 7 Effect Generator", () => {
           if (error instanceof PrismaForeignKeyConstraintError) {
             expect(error.cause.code).toBe("P2003");
           }
-        }).pipe(Effect.provide(MainLayer))
+        }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect(
@@ -2162,7 +2264,7 @@ describe("Prisma 7 Effect Generator", () => {
             .pipe(Effect.flip);
 
           expect(error).toBeInstanceOf(PrismaRecordNotFoundError);
-        }).pipe(Effect.provide(MainLayer))
+        }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect(
@@ -2176,7 +2278,7 @@ describe("Prisma 7 Effect Generator", () => {
             .pipe(Effect.flip);
 
           expect(error).toBeInstanceOf(PrismaRecordNotFoundError);
-        }).pipe(Effect.provide(MainLayer))
+        }).pipe(Effect.provide(MainLayer)),
     );
   });
 
@@ -2206,7 +2308,7 @@ describe("Prisma 7 Effect Generator", () => {
 
         // Cleanup
         yield* prisma.user.delete({ where: { id: user.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("include should add relations to type", () =>
@@ -2238,7 +2340,7 @@ describe("Prisma 7 Effect Generator", () => {
         // Cleanup
         yield* prisma.post.deleteMany({ where: { authorId: user.id } });
         yield* prisma.user.delete({ where: { id: user.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("findMany should return narrowed array type", () =>
@@ -2250,7 +2352,7 @@ describe("Prisma 7 Effect Generator", () => {
         });
 
         expectTypeOf(users).toEqualTypeOf<{ email: string }[]>();
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("no select should return full model", () =>
@@ -2274,7 +2376,7 @@ describe("Prisma 7 Effect Generator", () => {
 
         // Cleanup
         yield* prisma.user.delete({ where: { id: user.id } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
   });
 
@@ -2292,7 +2394,7 @@ describe("Prisma 7 Effect Generator", () => {
 
         // Use Prisma.sql to create the SQL object
         const result = yield* prisma.$queryRaw<{ email: string }[]>(
-          PrismaNamespace.sql`SELECT email FROM User WHERE email = ${email}`
+          PrismaNamespace.sql`SELECT email FROM User WHERE email = ${email}`,
         );
 
         expect(result).toHaveLength(1);
@@ -2300,7 +2402,7 @@ describe("Prisma 7 Effect Generator", () => {
 
         // Cleanup
         yield* prisma.user.delete({ where: { email } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("$executeRaw should execute raw mutations", () =>
@@ -2312,7 +2414,7 @@ describe("Prisma 7 Effect Generator", () => {
 
         // Use Prisma.sql to create the SQL object
         const affected = yield* prisma.$executeRaw(
-          PrismaNamespace.sql`UPDATE User SET name = 'Updated via Raw' WHERE email = ${email}`
+          PrismaNamespace.sql`UPDATE User SET name = 'Updated via Raw' WHERE email = ${email}`,
         );
 
         expect(affected).toBe(1);
@@ -2322,7 +2424,7 @@ describe("Prisma 7 Effect Generator", () => {
 
         // Cleanup
         yield* prisma.user.delete({ where: { email } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("$queryRawUnsafe should execute unsafe SELECT", () =>
@@ -2337,7 +2439,7 @@ describe("Prisma 7 Effect Generator", () => {
         // Use unsafe variant with string query and parameters
         const result = yield* prisma.$queryRawUnsafe<{ email: string }[]>(
           "SELECT email FROM User WHERE email = ?",
-          email
+          email,
         );
 
         expect(result).toHaveLength(1);
@@ -2345,7 +2447,7 @@ describe("Prisma 7 Effect Generator", () => {
 
         // Cleanup
         yield* prisma.user.delete({ where: { email } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("$executeRawUnsafe should execute unsafe mutations", () =>
@@ -2359,7 +2461,7 @@ describe("Prisma 7 Effect Generator", () => {
         const affected = yield* prisma.$executeRawUnsafe(
           "UPDATE User SET name = ? WHERE email = ?",
           "Updated via Unsafe",
-          email
+          email,
         );
 
         expect(affected).toBe(1);
@@ -2369,7 +2471,7 @@ describe("Prisma 7 Effect Generator", () => {
 
         // Cleanup
         yield* prisma.user.delete({ where: { email } });
-      }).pipe(Effect.provide(MainLayer))
+      }).pipe(Effect.provide(MainLayer)),
     );
   });
 });

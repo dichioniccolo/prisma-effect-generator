@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { Effect } from "effect";
 import { Prisma, MyPrismaError } from "./generated/effect";
-import { PrismaClient } from "./generated/client";
+import { PrismaClient } from "./generated/client/client";
 import * as fs from "fs";
 import * as path from "path";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 
 // Test that the generated code has the correct import with .js extension
 describe("Import File Extension", () => {
@@ -11,7 +12,7 @@ describe("Import File Extension", () => {
     it("should generate error import with .js extension", () => {
       const generatedFile = fs.readFileSync(
         path.join(__dirname, "generated/effect/index.ts"),
-        "utf-8"
+        "utf-8",
       );
 
       // The import should have .js extension added by importFileExtension config
@@ -22,7 +23,7 @@ describe("Import File Extension", () => {
     it("should not double-add extension if already present", () => {
       const generatedFile = fs.readFileSync(
         path.join(__dirname, "generated/effect/index.ts"),
-        "utf-8"
+        "utf-8",
       );
 
       // Should not have double extensions like .js.js
@@ -35,7 +36,9 @@ describe("Import File Extension", () => {
     let prismaClient: PrismaClient;
 
     beforeAll(async () => {
-      prismaClient = new PrismaClient();
+      prismaClient = new PrismaClient({
+        adapter: new PrismaLibSql({ url: "file:./dev.db" }),
+      });
       await prismaClient.$connect();
     });
 
@@ -59,16 +62,25 @@ describe("Import File Extension", () => {
         });
       });
 
-      const result = await Effect.runPromiseExit(
-        program.pipe(Effect.provide(Prisma.layer()))
+      const result = await Effect.runPromise(
+        program.pipe(
+          Effect.provide(
+            Prisma.layer({
+              adapter: new PrismaLibSql({ url: "file:./dev.db" }),
+            }),
+          ),
+          Effect.as("success"),
+          Effect.catchIf(
+            () => true,
+            (error) =>
+              Effect.succeed(
+                (error as { _tag?: string })._tag ?? "unknown-error-tag",
+              ),
+          ),
+        ),
       );
 
-      expect(result._tag).toBe("Failure");
-      if (result._tag === "Failure") {
-        const error = result.cause;
-        // The error should be our custom MyPrismaError
-        expect(error._tag).toBe("Fail");
-      }
+      expect(result).toBe("MyPrismaError");
     });
   });
 });

@@ -1,11 +1,13 @@
 import { describe, expect, expectTypeOf, it } from "@effect/vitest";
 import { Effect } from "effect";
-import {
-  Prisma,
-  MyPrismaError,
-} from "./generated/effect/index.js";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { Prisma, MyPrismaError } from "./generated/effect/index.js";
 
-const MainLayer = Prisma.layer();
+// Create libSQL adapter for Prisma 7 - new API takes url directly
+const adapter = new PrismaLibSql({ url: "file:./dev.db" });
+
+// Prisma 7 requires adapter option
+const MainLayer = Prisma.layer({ adapter });
 
 describe("Custom Error Generator", () => {
   describe("Error type verification", () => {
@@ -42,30 +44,32 @@ describe("Custom Error Generator", () => {
       }).pipe(Effect.provide(MainLayer)),
     );
 
-    it.effect("create - should return custom error for unique constraint violation", () =>
-      Effect.gen(function* () {
-        const prisma = yield* Prisma;
-        const email = `unique-constraint-${Date.now()}@example.com`;
+    it.effect(
+      "create - should return custom error for unique constraint violation",
+      () =>
+        Effect.gen(function* () {
+          const prisma = yield* Prisma;
+          const email = `unique-constraint-${Date.now()}@example.com`;
 
-        // Create first user
-        const user1 = yield* prisma.user.create({
-          data: { email, name: "User 1" },
-        });
+          // Create first user
+          const user1 = yield* prisma.user.create({
+            data: { email, name: "User 1" },
+          });
 
-        // Try to create second user with same email - should fail
-        const error = yield* prisma.user
-          .create({ data: { email, name: "User 2" } })
-          .pipe(Effect.flip);
+          // Try to create second user with same email - should fail
+          const error = yield* prisma.user
+            .create({ data: { email, name: "User 2" } })
+            .pipe(Effect.flip);
 
-        // Verify custom error type
-        expect(error).toBeInstanceOf(MyPrismaError);
-        expect(error._tag).toBe("MyPrismaError");
-        expect(error.operation).toBe("create");
-        expect(error.model).toBe("User");
+          // Verify custom error type
+          expect(error).toBeInstanceOf(MyPrismaError);
+          expect(error._tag).toBe("MyPrismaError");
+          expect(error.operation).toBe("create");
+          expect(error.model).toBe("User");
 
-        // Cleanup
-        yield* prisma.user.delete({ where: { id: user1.id } });
-      }).pipe(Effect.provide(MainLayer)),
+          // Cleanup
+          yield* prisma.user.delete({ where: { id: user1.id } });
+        }).pipe(Effect.provide(MainLayer)),
     );
 
     it.effect("update - should return custom error when record not found", () =>

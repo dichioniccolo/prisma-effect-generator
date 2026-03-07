@@ -24,20 +24,19 @@
   "author": "Niccolo' Di Chio",
   "license": "MIT",
   "dependencies": {
-    "@effect/platform": "^0.94.4",
-    "@effect/platform-node": "^0.104.1",
-    "@effect/vitest": "^0.27.0",
-    "@prisma/generator-helper": "^7.4.0",
+    "@effect/platform-node": "4.0.0-beta.28",
+    "@effect/vitest": "4.0.0-beta.28",
+    "@prisma/generator-helper": "^7.4.2",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.2",
     "@changesets/cli": "^2.29.8",
-    "@prisma/client": "^7.4.0",
+    "@prisma/client": "^7.4.2",
     "@types/node": "^24.10.13",
-    "effect": "^3.19.16",
-    "prisma": "^7.4.0",
+    "effect": "4.0.0-beta.28",
+    "prisma": "^7.4.2",
     "tsx": "^4.21.0"
   }
 }

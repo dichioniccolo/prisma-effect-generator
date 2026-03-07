@@ -1,286 +1,162 @@
-import { Command, FileSystem } from "@effect/platform";
-import { NodeContext, NodeRuntime } from "@effect/platform-node";
-import { Console, Effect } from "effect";
+import { access } from "node:fs/promises";
+import { constants } from "node:fs";
+import { spawn } from "node:child_process";
 
-const run = (cmd: string, ...args: string[]) =>
-  Effect.gen(function* () {
-    yield* Console.log(cmd, ...args);
-    const exitCode = yield* Command.make(cmd, ...args).pipe(
-      Command.stdout("inherit"),
-      Command.stderr("inherit"),
-      Command.exitCode
-    );
-    if (exitCode !== 0) {
-      yield* Effect.fail(
-        new Error(`Command failed with exit code ${exitCode}`)
-      );
-    }
+const run = async (
+  cmd: string,
+  args: string[],
+  cwd?: string,
+): Promise<void> => {
+  const prefix = cwd ? `[${cwd}] ` : "";
+  console.log(`${prefix}${cmd} ${args.join(" ")}`);
+
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn(cmd, args, {
+      cwd,
+      stdio: "inherit",
+      env: process.env,
+    });
+
+    child.on("error", reject);
+    child.on("exit", (code) => {
+      if (code === 0) {
+        resolve();
+        return;
+      }
+      reject(new Error(`Command failed with exit code ${code ?? "unknown"}`));
+    });
   });
+};
 
-const runInDir = (dir: string, cmd: string, ...args: string[]) =>
-  Effect.gen(function* () {
-    yield* Console.log(`[${dir}]`, cmd, ...args);
-    const exitCode = yield* Command.make(cmd, ...args).pipe(
-      Command.workingDirectory(dir),
-      Command.stdout("inherit"),
-      Command.stderr("inherit"),
-      Command.exitCode
-    );
-    if (exitCode !== 0) {
-      yield* Effect.fail(
-        new Error(`Command failed with exit code ${exitCode}`)
-      );
-    }
-  });
-
-const runPrisma6Tests = Effect.gen(function* () {
-  yield* Console.log("\n=== Running Prisma 6 Tests ===\n");
-  const fs = yield* FileSystem.FileSystem;
-
-  // Install deps if needed
-  const nodeModulesExists = yield* fs.exists("tests/prisma6/node_modules");
-  if (!nodeModulesExists) {
-    yield* runInDir("tests/prisma6", "pnpm", "install");
+const exists = async (target: string): Promise<boolean> => {
+  try {
+    await access(target, constants.F_OK);
+    return true;
+  } catch {
+    return false;
   }
+};
 
-  // Push DB schema
-  yield* runInDir("tests/prisma6", "pnpm", "exec", "prisma", "db", "push");
-
-  // Explicitly run generate to ensure effect generator runs
-  yield* runInDir("tests/prisma6", "pnpm", "exec", "prisma", "generate");
-
-  // Type check generated effect files with strictest settings (matching Chefy's tsconfig)
-  yield* runInDir(
-    "tests/prisma6",
+const typecheckGenerated = async (dir: string): Promise<void> => {
+  await run(
     "npx",
-    "tsc",
-    "--noEmit",
-    "--strict",
-    "--exactOptionalPropertyTypes",
-    "--noUncheckedIndexedAccess",
-    "--noImplicitReturns",
-    "--noFallthroughCasesInSwitch",
-    "--noUnusedLocals",
-    "--noUnusedParameters",
-    "--moduleResolution",
-    "NodeNext",
-    "--module",
-    "NodeNext",
-    "--target",
-    "ES2022",
-    "--skipLibCheck",
-    "generated/effect/index.ts"
+    [
+      "tsc",
+      "--noEmit",
+      "--strict",
+      "--exactOptionalPropertyTypes",
+      "--noUncheckedIndexedAccess",
+      "--noImplicitReturns",
+      "--noFallthroughCasesInSwitch",
+      "--noUnusedLocals",
+      "--noUnusedParameters",
+      "--moduleResolution",
+      "NodeNext",
+      "--module",
+      "NodeNext",
+      "--target",
+      "ES2022",
+      "--skipLibCheck",
+      "generated/effect/index.ts",
+    ],
+    dir,
   );
+};
 
-  // Run tests
-  yield* runInDir("tests/prisma6", "pnpm", "test");
-}).pipe(
-  Effect.ensuring(
-    process.argv.includes("--keep-db")
-      ? Effect.void
-      : Effect.ignore(run("rm", "-rf", "tests/prisma6/dev.db"))
-  ),
-  Effect.ensuring(Effect.ignore(run("rm", "-rf", "tests/prisma6/node_modules")))
-);
+const runSuite = async (
+  dir: string,
+  banner: string,
+  generate: () => Promise<void>,
+  keepDb: boolean,
+): Promise<void> => {
+  console.log(`\n=== ${banner} ===\n`);
 
-const runPrisma7Tests = Effect.gen(function* () {
-  yield* Console.log("\n=== Running Prisma 7 Tests ===\n");
-  const fs = yield* FileSystem.FileSystem;
+  await run("pnpm", ["install"], dir);
 
-  // Install deps if needed
-  const nodeModulesExists = yield* fs.exists("tests/prisma7/node_modules");
-  if (!nodeModulesExists) {
-    yield* runInDir("tests/prisma7", "pnpm", "install");
+  await generate();
+  await typecheckGenerated(dir);
+  await run("pnpm", ["test"], dir);
+
+  if (!keepDb) {
+    await run("rm", ["-rf", `${dir}/dev.db`]);
+  }
+};
+
+const main = async (): Promise<void> => {
+  const args = process.argv;
+  const clean = args.includes("--clean");
+  const keepDb = args.includes("--keep-db");
+  const prisma7Only = args.includes("--prisma7");
+  const customErrorOnly = args.includes("--custom-error");
+  const importExtensionOnly = args.includes("--import-extension");
+
+  if (clean || !(await exists("dist"))) {
+    await run("pnpm", ["build"]);
   }
 
-  // Push DB schema
-  yield* runInDir("tests/prisma7", "pnpm", "exec", "prisma", "db", "push");
-
-  // Explicitly run generate to ensure effect generator runs
-  yield* runInDir("tests/prisma7", "pnpm", "exec", "prisma", "generate");
-
-  // Type check generated effect files with strictest settings (matching Chefy's tsconfig)
-  yield* runInDir(
-    "tests/prisma7",
-    "npx",
-    "tsc",
-    "--noEmit",
-    "--strict",
-    "--exactOptionalPropertyTypes",
-    "--noUncheckedIndexedAccess",
-    "--noImplicitReturns",
-    "--noFallthroughCasesInSwitch",
-    "--noUnusedLocals",
-    "--noUnusedParameters",
-    "--moduleResolution",
-    "NodeNext",
-    "--module",
-    "NodeNext",
-    "--target",
-    "ES2022",
-    "--skipLibCheck",
-    "generated/effect/index.ts"
-  );
-
-  // Run tests
-  yield* runInDir("tests/prisma7", "pnpm", "test");
-}).pipe(
-  Effect.ensuring(
-    process.argv.includes("--keep-db")
-      ? Effect.void
-      : Effect.ignore(run("rm", "-rf", "tests/prisma7/dev.db"))
-  ),
-  Effect.ensuring(Effect.ignore(run("rm", "-rf", "tests/prisma7/node_modules")))
-);
-
-const runCustomErrorTests = Effect.gen(function* () {
-  yield* Console.log("\n=== Running Custom Error Tests ===\n");
-  const fs = yield* FileSystem.FileSystem;
-
-  // Install deps if needed
-  const nodeModulesExists = yield* fs.exists("tests/custom-error/node_modules");
-  if (!nodeModulesExists) {
-    yield* runInDir("tests/custom-error", "pnpm", "install");
-  }
-
-  // Push DB schema
-  yield* runInDir("tests/custom-error", "pnpm", "exec", "prisma", "db", "push");
-
-  // Explicitly run generate to ensure effect generator runs
-  yield* runInDir("tests/custom-error", "pnpm", "exec", "prisma", "generate");
-
-  // Type check generated effect files with strictest settings (matching Chefy's tsconfig)
-  yield* runInDir(
-    "tests/custom-error",
-    "npx",
-    "tsc",
-    "--noEmit",
-    "--strict",
-    "--exactOptionalPropertyTypes",
-    "--noUncheckedIndexedAccess",
-    "--noImplicitReturns",
-    "--noFallthroughCasesInSwitch",
-    "--noUnusedLocals",
-    "--noUnusedParameters",
-    "--moduleResolution",
-    "NodeNext",
-    "--module",
-    "NodeNext",
-    "--target",
-    "ES2022",
-    "--skipLibCheck",
-    "generated/effect/index.ts"
-  );
-
-  // Run tests
-  yield* runInDir("tests/custom-error", "pnpm", "test");
-}).pipe(
-  Effect.ensuring(
-    process.argv.includes("--keep-db")
-      ? Effect.void
-      : Effect.ignore(run("rm", "-rf", "tests/custom-error/dev.db"))
-  )
-);
-
-const runImportExtensionTests = Effect.gen(function* () {
-  yield* Console.log("\n=== Running Import Extension Tests ===\n");
-  const fs = yield* FileSystem.FileSystem;
-
-  // Install deps if needed
-  const nodeModulesExists = yield* fs.exists(
-    "tests/import-extension/node_modules"
-  );
-  if (!nodeModulesExists) {
-    yield* runInDir("tests/import-extension", "pnpm", "install");
-  }
-
-  // Push DB schema
-  yield* runInDir(
-    "tests/import-extension",
-    "pnpm",
-    "exec",
-    "prisma",
-    "db",
-    "push"
-  );
-
-  // Explicitly run generate to ensure effect generator runs
-  yield* runInDir(
-    "tests/import-extension",
-    "pnpm",
-    "exec",
-    "prisma",
-    "generate"
-  );
-
-  // Type check generated effect files with strictest settings (matching Chefy's tsconfig)
-  yield* runInDir(
-    "tests/import-extension",
-    "npx",
-    "tsc",
-    "--noEmit",
-    "--strict",
-    "--exactOptionalPropertyTypes",
-    "--noUncheckedIndexedAccess",
-    "--noImplicitReturns",
-    "--noFallthroughCasesInSwitch",
-    "--noUnusedLocals",
-    "--noUnusedParameters",
-    "--moduleResolution",
-    "NodeNext",
-    "--module",
-    "NodeNext",
-    "--target",
-    "ES2022",
-    "--skipLibCheck",
-    "generated/effect/index.ts"
-  );
-
-  // Run tests
-  yield* runInDir("tests/import-extension", "pnpm", "test");
-}).pipe(
-  Effect.ensuring(
-    process.argv.includes("--keep-db")
-      ? Effect.void
-      : Effect.ignore(run("rm", "-rf", "tests/import-extension/dev.db"))
-  )
-);
-
-const program = Effect.gen(function* () {
-  const fs = yield* FileSystem.FileSystem;
-  const clean = process.argv.includes("--clean");
-  const prisma7Only = process.argv.includes("--prisma7");
-  const prisma6Only = process.argv.includes("--prisma6");
-  const customErrorOnly = process.argv.includes("--custom-error");
-  const importExtensionOnly = process.argv.includes("--import-extension");
-
-  // Build generator
-  const distExists = yield* fs.exists("dist/");
-  if (clean || !distExists) {
-    yield* run("pnpm", "run", "build");
-  }
   if (clean) {
-    yield* run("tsc", "--noEmit", "--project", "tsconfig.test.json");
+    await run("tsc", ["--noEmit", "--project", "tsconfig.test.json"]);
   }
 
-  // Run tests based on flags
+  const runPrisma7Tests = () =>
+    runSuite(
+      "tests/prisma7",
+      "Running Prisma 7 Tests",
+      async () => {
+        await run("pnpm", ["exec", "prisma", "db", "push"], "tests/prisma7");
+        await run("pnpm", ["exec", "prisma", "generate"], "tests/prisma7");
+      },
+      keepDb,
+    );
+
+  const runCustomErrorTests = () =>
+    runSuite(
+      "tests/custom-error",
+      "Running Custom Error Tests",
+      async () => {
+        await run(
+          "pnpm",
+          ["exec", "prisma", "db", "push"],
+          "tests/custom-error",
+        );
+        await run("pnpm", ["exec", "prisma", "generate"], "tests/custom-error");
+      },
+      keepDb,
+    );
+
+  const runImportExtensionTests = () =>
+    runSuite(
+      "tests/import-extension",
+      "Running Import Extension Tests",
+      async () => {
+        await run(
+          "pnpm",
+          ["exec", "prisma", "db", "push"],
+          "tests/import-extension",
+        );
+        await run(
+          "pnpm",
+          ["exec", "prisma", "generate"],
+          "tests/import-extension",
+        );
+      },
+      keepDb,
+    );
+
   if (prisma7Only) {
-    yield* runPrisma7Tests;
-  } else if (prisma6Only) {
-    yield* runPrisma6Tests;
+    await runPrisma7Tests();
   } else if (customErrorOnly) {
-    yield* runCustomErrorTests;
+    await runCustomErrorTests();
   } else if (importExtensionOnly) {
-    yield* runImportExtensionTests;
+    await runImportExtensionTests();
   } else {
-    // Run all
-    yield* runPrisma6Tests;
-    yield* runPrisma7Tests;
-    yield* runCustomErrorTests;
-    yield* runImportExtensionTests;
+    await runPrisma7Tests();
+    await runCustomErrorTests();
+    await runImportExtensionTests();
   }
-});
+};
 
-NodeRuntime.runMain(
-  Effect.scoped(program.pipe(Effect.provide(NodeContext.layer)))
-);
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

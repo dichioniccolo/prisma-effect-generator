@@ -1,12 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
   output   = "./generated/client"
 }
 
 generator effect {
   provider            = "../../dist/index.js"
   output              = "./generated/effect"
-  clientImportPath    = "../client/index.js"
+  clientImportPath    = "../client/client.js"
   // errorImportPath WITHOUT extension - the generator should add it
   errorImportPath     = "./errors#MyPrismaError"
   // This tells the generator to add .js extension to relative imports
@@ -15,7 +15,6 @@ generator effect {
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
 }
 
 model User {
