@@ -1,5 +1,11 @@
 # prisma-generator-effect
 
+## 1.1.0-beta.0
+
+### Minor Changes
+
+- 640be88: Beta release for Prisma 7 / Effect 4 compatibility
+
 ## 1.0.0
 
 ### Major Changes
