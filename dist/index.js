@@ -115,7 +115,7 @@ function generateRawSqlOperations(customError, enableTelemetry) {
         : `Effect.fnUntraced(${generatorFn})`;
     return `
     $executeRaw: ${wrapTelemetry("Prisma.$executeRaw", `function* (args) {
-      const actualClient = yield* clientOrTx(client);
+      const actualClient = yield* writeClient(client, pin);
       return yield* Effect.tryPromise<any, ${errorType}>({
         try: () => (Array.isArray(args) ? actualClient.$executeRaw(args[0], ...args.slice(1)) : actualClient.$executeRaw(args)) as any,
         catch: (error) => mapError(error, "$executeRaw", "Prisma")
@@ -123,7 +123,7 @@ function generateRawSqlOperations(customError, enableTelemetry) {
     }`)},
 
     $executeRawUnsafe: ${wrapTelemetry("Prisma.$executeRawUnsafe", `function* (query, ...values) {
-      const actualClient = yield* clientOrTx(client);
+      const actualClient = yield* writeClient(client, pin);
       return yield* Effect.tryPromise<any, ${errorType}>({
         try: () => actualClient.$executeRawUnsafe(query, ...values) as any,
         catch: (error) => mapError(error, "$executeRawUnsafe", "Prisma")
@@ -131,7 +131,7 @@ function generateRawSqlOperations(customError, enableTelemetry) {
     }`)},
 
     $queryRaw: ${wrapTelemetry("Prisma.$queryRaw", `function* (args) {
-      const actualClient = yield* clientOrTx(client);
+      const actualClient = yield* writeClient(client, pin);
       return yield* Effect.tryPromise<any, ${errorType}>({
         try: () => (Array.isArray(args) ? actualClient.$queryRaw(args[0], ...args.slice(1)) : actualClient.$queryRaw(args)) as any,
         catch: (error) => mapError(error, "$queryRaw", "Prisma")
@@ -139,7 +139,7 @@ function generateRawSqlOperations(customError, enableTelemetry) {
     }`)},
 
     $queryRawUnsafe: ${wrapTelemetry("Prisma.$queryRawUnsafe", `function* (query, ...values) {
-      const actualClient = yield* clientOrTx(client);
+      const actualClient = yield* writeClient(client, pin);
       return yield* Effect.tryPromise<any, ${errorType}>({
         try: () => actualClient.$queryRawUnsafe(query, ...values) as any,
         catch: (error) => mapError(error, "$queryRawUnsafe", "Prisma")
@@ -306,6 +306,17 @@ function generatePrismaInterface(models, customError, supportsManyAndReturn) {
  */
 export interface IPrismaService {
   client: BasePrismaClient
+  // Read-replica routing escape hatches
+  /**
+   * Return a sub-service where all operations (including reads) are pinned to the primary client.
+   * Useful when you need strong consistency for a specific read (e.g. read-your-own-writes).
+   */
+  $primary: () => IPrismaService
+  /**
+   * Return a sub-service where all operations (including writes and raw queries) are pinned to a random replica.
+   * If no replicas are configured, falls back to the primary client.
+   */
+  $replica: () => IPrismaService
   // Transaction operations
   $transaction: <R, E, A>(
     effect: EffectType<A, E, R>
@@ -352,6 +363,150 @@ ${modelInterfaces}
 function capitalize(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
+/**
+ * Generate the PrismaReplicas Context.Service class declaration.
+ * This is an optional service that, when provided in the layer context, causes read
+ * operations to be routed to a randomly selected replica instead of the primary client.
+ */
+function generatePrismaReplicasClass() {
+    return `/**
+ * Context tag for read replica clients.
+ *
+ * When provided alongside \`PrismaClient\`, read operations (\`findUnique\`, \`findFirst\`,
+ * \`findMany\`, \`count\`, \`aggregate\`, \`groupBy\`, etc.) are routed to a random replica.
+ * Write operations, transactions, and raw SQL always use the primary client by default.
+ *
+ * Use \`prisma.$primary()\` / \`prisma.$replica()\` on the service to force routing.
+ *
+ * @example
+ * const AppLayer = Layer.mergeAll(
+ *   Prisma.layer({ adapter: primaryAdapter }),
+ *   PrismaReplicas.layer([{ adapter: replica1Adapter }, { adapter: replica2Adapter }])
+ * )
+ */
+export class PrismaReplicas extends Context.Service<PrismaReplicas, ReadonlyArray<BasePrismaClient>>()("PrismaReplicas") {
+  /**
+   * Create a PrismaReplicas layer from an array of PrismaClient constructor options.
+   * Each replica client will be automatically disconnected when the layer scope ends.
+   */
+  static layer: (
+    configs: ReadonlyArray<ConstructorParameters<typeof BasePrismaClient>[0]>
+  ) => Layer.Layer<PrismaReplicas, never, never> = (configs) => Layer.effect(
+    PrismaReplicas,
+    Effect.gen(function* () {
+      const clients: ReadonlyArray<BasePrismaClient> = configs.map((c) => new BasePrismaClient(c))
+      yield* Effect.addFinalizer(() =>
+        Effect.promise(() =>
+          Promise.all(clients.map((c) => c.$disconnect())).then(() => undefined)
+        )
+      )
+      return clients
+    })
+  )
+
+  /**
+   * Create a PrismaReplicas layer from an Effect that yields the replica configs.
+   * Useful when replica configuration depends on an Effect service (e.g. config lookup).
+   */
+  static layerEffect: <R, E>(
+    configsEffect: EffectType<ReadonlyArray<ConstructorParameters<typeof BasePrismaClient>[0]>, E, R>
+  ) => Layer.Layer<PrismaReplicas, E, Exclude<R, Scope.Scope>> = (configsEffect) => Layer.effect(
+    PrismaReplicas,
+    Effect.gen(function* () {
+      const configs = yield* configsEffect
+      const clients: ReadonlyArray<BasePrismaClient> = configs.map((c) => new BasePrismaClient(c))
+      yield* Effect.addFinalizer(() =>
+        Effect.promise(() =>
+          Promise.all(clients.map((c) => c.$disconnect())).then(() => undefined)
+        )
+      )
+      return clients
+    })
+  )
+
+  /**
+   * Create a PrismaReplicas layer from an array of already-constructed PrismaClient instances.
+   * The caller is responsible for managing the lifecycle of the provided clients.
+   */
+  static layerFromClients: (
+    clients: ReadonlyArray<BasePrismaClient>
+  ) => Layer.Layer<PrismaReplicas, never, never> = (clients) => Layer.succeed(PrismaReplicas, clients)
+}`;
+}
+/**
+ * Generate the read/write routing helpers.
+ * These helpers consult the current transaction context and the optional PrismaReplicas service
+ * to decide which underlying client should handle a given operation.
+ */
+function generateRoutingHelpers() {
+    return `/** Pin parameter controlling replica routing for a sub-service. */
+type PrismaRoutingPin = "primary" | "replica" | undefined
+
+/** Pick a random replica from the provided array. Caller ensures non-empty. */
+const pickReplica = (replicas: ReadonlyArray<BasePrismaClient>): BasePrismaClient =>
+  replicas[Math.floor(Math.random() * replicas.length)] as BasePrismaClient
+
+/**
+ * Resolve the client to use for a READ operation.
+ *
+ * Priority:
+ *   1. Transaction client (if inside \`$transaction\`)
+ *   2. Primary client (if pin === "primary")
+ *   3. Random replica (if replicas are configured and non-empty)
+ *   4. Primary client (fallback)
+ */
+const readClient = (client: BasePrismaClient, pin: PrismaRoutingPin) => Effect.gen(function* () {
+  const tx = yield* Effect.serviceOption(PrismaTransactionClientService)
+  if (Option.isSome(tx)) return tx.value as BasePrismaClient
+  if (pin === "primary") return client
+  const replicas = yield* Effect.serviceOption(PrismaReplicas)
+  if (Option.isNone(replicas) || replicas.value.length === 0) return client
+  return pickReplica(replicas.value)
+})
+
+/**
+ * Resolve the client to use for a WRITE or raw SQL operation.
+ *
+ * Priority:
+ *   1. Transaction client (if inside \`$transaction\`)
+ *   2. Random replica (only if pin === "replica" AND replicas are configured)
+ *   3. Primary client (default - writes/raw always go here unless explicitly pinned to replica)
+ */
+const writeClient = (client: BasePrismaClient, pin: PrismaRoutingPin) => Effect.gen(function* () {
+  const tx = yield* Effect.serviceOption(PrismaTransactionClientService)
+  if (Option.isSome(tx)) return tx.value as BasePrismaClient
+  if (pin === "replica") {
+    const replicas = yield* Effect.serviceOption(PrismaReplicas)
+    if (Option.isSome(replicas) && replicas.value.length > 0) {
+      return pickReplica(replicas.value)
+    }
+  }
+  return client
+})`;
+}
+/**
+ * Wrap a service body string in the buildService(pin) closure that also constructs
+ * the primary and replica sub-services. This is shared between both error-service variants.
+ *
+ * The generated scaffolding:
+ *   1. Declares \`primaryService\` / \`replicaService\` with definite-assignment assertions.
+ *   2. Defines \`buildService(pin)\` - captures \`pin\` so every read/write helper call
+ *      resolves to the correct client at runtime.
+ *   3. Builds the primary and replica sub-services first, then returns the main service
+ *      with pin=undefined (auto-routing).
+ */
+function wrapBuildService(body) {
+    return `let primaryService!: IPrismaService;
+  let replicaService!: IPrismaService;
+
+  const buildService = (pin: PrismaRoutingPin): IPrismaService => ({
+${body}
+  });
+
+  primaryService = buildService("primary");
+  replicaService = buildService("replica");
+  return buildService(undefined);`;
+}
 function generateModelOperations(models, customError, enableTelemetry, supportsManyAndReturn) {
     return models
         .map((model) => {
@@ -383,7 +538,7 @@ function generateModelOperations(models, customError, enableTelemetry, supportsM
         // Implementation without explicit types - the IPrismaService interface provides all type checking
         return `    ${modelNameCamel}: {
       findUnique: ${wrapTelemetry(`Prisma.${modelNameCamel}.findUnique`, `function* (args) {
-        const actualClient = yield* clientOrTx(client);
+        const actualClient = yield* readClient(client, pin);
         return yield* Effect.tryPromise<any, ${errorType("PrismaFindError")}>({
           try: () => actualClient.${modelNameCamel}.findUnique(args as any)${promiseCast()},
           catch: (error) => ${mapperFn("mapFindError")}(error, "findUnique", "${modelName}")
@@ -391,7 +546,7 @@ function generateModelOperations(models, customError, enableTelemetry, supportsM
       }`)},
 
       findUniqueOrThrow: ${wrapTelemetry(`Prisma.${modelNameCamel}.findUniqueOrThrow`, `function* (args) {
-        const actualClient = yield* clientOrTx(client);
+        const actualClient = yield* readClient(client, pin);
         return yield* Effect.tryPromise<any, ${errorType("PrismaFindOrThrowError")}>({
           try: () => actualClient.${modelNameCamel}.findUniqueOrThrow(args as any)${promiseCast()},
           catch: (error) => ${mapperFn("mapFindOrThrowError")}(error, "findUniqueOrThrow", "${modelName}")
@@ -399,7 +554,7 @@ function generateModelOperations(models, customError, enableTelemetry, supportsM
       }`)},
 
       findFirst: ${wrapTelemetry(`Prisma.${modelNameCamel}.findFirst`, `function* (args) {
-        const actualClient = yield* clientOrTx(client);
+        const actualClient = yield* readClient(client, pin);
         return yield* Effect.tryPromise<any, ${errorType("PrismaFindError")}>({
           try: () => actualClient.${modelNameCamel}.findFirst(args as any)${promiseCast()},
           catch: (error) => ${mapperFn("mapFindError")}(error, "findFirst", "${modelName}")
@@ -407,7 +562,7 @@ function generateModelOperations(models, customError, enableTelemetry, supportsM
       }`)},
 
       findFirstOrThrow: ${wrapTelemetry(`Prisma.${modelNameCamel}.findFirstOrThrow`, `function* (args) {
-        const actualClient = yield* clientOrTx(client);
+        const actualClient = yield* readClient(client, pin);
         return yield* Effect.tryPromise<any, ${errorType("PrismaFindOrThrowError")}>({
           try: () => actualClient.${modelNameCamel}.findFirstOrThrow(args as any)${promiseCast()},
           catch: (error) => ${mapperFn("mapFindOrThrowError")}(error, "findFirstOrThrow", "${modelName}")
@@ -415,7 +570,7 @@ function generateModelOperations(models, customError, enableTelemetry, supportsM
       }`)},
 
       findMany: ${wrapTelemetry(`Prisma.${modelNameCamel}.findMany`, `function* (args) {
-        const actualClient = yield* clientOrTx(client);
+        const actualClient = yield* readClient(client, pin);
         return yield* Effect.tryPromise<any, ${errorType("PrismaFindError")}>({
           try: () => actualClient.${modelNameCamel}.findMany(args as any)${promiseCast()},
           catch: (error) => ${mapperFn("mapFindError")}(error, "findMany", "${modelName}")
@@ -423,7 +578,7 @@ function generateModelOperations(models, customError, enableTelemetry, supportsM
       }`)},
 
       create: ${wrapTelemetry(`Prisma.${modelNameCamel}.create`, `function* (args) {
-        const actualClient = yield* clientOrTx(client);
+        const actualClient = yield* writeClient(client, pin);
         return yield* Effect.tryPromise<any, ${errorType("PrismaCreateError")}>({
           try: () => actualClient.${modelNameCamel}.create(args as any)${promiseCast()},
           catch: (error) => ${mapperFn("mapCreateError")}(error, "create", "${modelName}")
@@ -431,7 +586,7 @@ function generateModelOperations(models, customError, enableTelemetry, supportsM
       }`)},
 
       createMany: ${wrapTelemetry(`Prisma.${modelNameCamel}.createMany`, `function* (args) {
-        const actualClient = yield* clientOrTx(client);
+        const actualClient = yield* writeClient(client, pin);
         return yield* Effect.tryPromise<any, ${errorType("PrismaCreateError")}>({
           try: () => actualClient.${modelNameCamel}.createMany(args as any),
           catch: (error) => ${mapperFn("mapCreateError")}(error, "createMany", "${modelName}")
@@ -440,7 +595,7 @@ function generateModelOperations(models, customError, enableTelemetry, supportsM
             ? `
 
       createManyAndReturn: ${wrapTelemetry(`Prisma.${modelNameCamel}.createManyAndReturn`, `function* (args) {
-        const actualClient = yield* clientOrTx(client);
+        const actualClient = yield* writeClient(client, pin);
         return yield* Effect.tryPromise<any, ${errorType("PrismaCreateError")}>({
           try: () => actualClient.${modelNameCamel}.createManyAndReturn(args as any)${promiseCast()},
           catch: (error) => ${mapperFn("mapCreateError")}(error, "createManyAndReturn", "${modelName}")
@@ -449,7 +604,7 @@ function generateModelOperations(models, customError, enableTelemetry, supportsM
             : ""}
 
       delete: ${wrapTelemetry(`Prisma.${modelNameCamel}.delete`, `function* (args) {
-        const actualClient = yield* clientOrTx(client);
+        const actualClient = yield* writeClient(client, pin);
         return yield* Effect.tryPromise<any, ${errorType("PrismaDeleteError")}>({
           try: () => actualClient.${modelNameCamel}.delete(args as any)${promiseCast()},
           catch: (error) => ${mapperFn("mapDeleteError")}(error, "delete", "${modelName}")
@@ -457,7 +612,7 @@ function generateModelOperations(models, customError, enableTelemetry, supportsM
       }`)},
 
       update: ${wrapTelemetry(`Prisma.${modelNameCamel}.update`, `function* (args) {
-        const actualClient = yield* clientOrTx(client);
+        const actualClient = yield* writeClient(client, pin);
         return yield* Effect.tryPromise<any, ${errorType("PrismaUpdateError")}>({
           try: () => actualClient.${modelNameCamel}.update(args as any)${promiseCast()},
           catch: (error) => ${mapperFn("mapUpdateError")}(error, "update", "${modelName}")
@@ -465,7 +620,7 @@ function generateModelOperations(models, customError, enableTelemetry, supportsM
       }`)},
 
       deleteMany: ${wrapTelemetry(`Prisma.${modelNameCamel}.deleteMany`, `function* (args) {
-        const actualClient = yield* clientOrTx(client);
+        const actualClient = yield* writeClient(client, pin);
         return yield* Effect.tryPromise<any, ${errorType("PrismaDeleteManyError")}>({
           try: () => actualClient.${modelNameCamel}.deleteMany(args as any),
           catch: (error) => ${mapperFn("mapDeleteManyError")}(error, "deleteMany", "${modelName}")
@@ -473,7 +628,7 @@ function generateModelOperations(models, customError, enableTelemetry, supportsM
       }`)},
 
       updateMany: ${wrapTelemetry(`Prisma.${modelNameCamel}.updateMany`, `function* (args) {
-        const actualClient = yield* clientOrTx(client);
+        const actualClient = yield* writeClient(client, pin);
         return yield* Effect.tryPromise<any, ${errorType("PrismaUpdateManyError")}>({
           try: () => actualClient.${modelNameCamel}.updateMany(args as any),
           catch: (error) => ${mapperFn("mapUpdateManyError")}(error, "updateMany", "${modelName}")
@@ -482,7 +637,7 @@ function generateModelOperations(models, customError, enableTelemetry, supportsM
             ? `
 
       updateManyAndReturn: ${wrapTelemetry(`Prisma.${modelNameCamel}.updateManyAndReturn`, `function* (args) {
-        const actualClient = yield* clientOrTx(client);
+        const actualClient = yield* writeClient(client, pin);
         return yield* Effect.tryPromise<any, ${errorType("PrismaUpdateManyError")}>({
           try: () => actualClient.${modelNameCamel}.updateManyAndReturn(args as any)${promiseCast()},
           catch: (error) => ${mapperFn("mapUpdateManyError")}(error, "updateManyAndReturn", "${modelName}")
@@ -491,7 +646,7 @@ function generateModelOperations(models, customError, enableTelemetry, supportsM
             : ""}
 
       upsert: ${wrapTelemetry(`Prisma.${modelNameCamel}.upsert`, `function* (args) {
-        const actualClient = yield* clientOrTx(client);
+        const actualClient = yield* writeClient(client, pin);
         return yield* Effect.tryPromise<any, ${errorType("PrismaCreateError")}>({
           try: () => actualClient.${modelNameCamel}.upsert(args as any)${promiseCast()},
           catch: (error) => ${mapperFn("mapCreateError")}(error, "upsert", "${modelName}")
@@ -500,7 +655,7 @@ function generateModelOperations(models, customError, enableTelemetry, supportsM
 
       // Aggregation operations
       count: ${wrapTelemetry(`Prisma.${modelNameCamel}.count`, `function* (args) {
-        const actualClient = yield* clientOrTx(client);
+        const actualClient = yield* readClient(client, pin);
         return yield* Effect.tryPromise<any, ${errorType("PrismaFindError")}>({
           try: () => actualClient.${modelNameCamel}.count(args as any)${promiseCast()},
           catch: (error) => ${mapperFn("mapFindError")}(error, "count", "${modelName}")
@@ -508,7 +663,7 @@ function generateModelOperations(models, customError, enableTelemetry, supportsM
       }`)},
 
       aggregate: ${wrapTelemetry(`Prisma.${modelNameCamel}.aggregate`, `function* (args) {
-        const actualClient = yield* clientOrTx(client);
+        const actualClient = yield* readClient(client, pin);
         return yield* Effect.tryPromise<any, ${errorType("PrismaFindError")}>({
           try: () => actualClient.${modelNameCamel}.aggregate(args as any)${strongPromiseCast()},
           catch: (error) => ${mapperFn("mapFindError")}(error, "aggregate", "${modelName}")
@@ -516,7 +671,7 @@ function generateModelOperations(models, customError, enableTelemetry, supportsM
       }`)},
 
       groupBy: ${wrapTelemetry(`Prisma.${modelNameCamel}.groupBy`, `function* (args) {
-        const actualClient = yield* clientOrTx(client);
+        const actualClient = yield* readClient(client, pin);
         return yield* Effect.tryPromise<any, ${errorType("PrismaFindError")}>({
           try: () => actualClient.${modelNameCamel}.groupBy(args as any)${strongPromiseCast()},
           catch: (error) => ${mapperFn("mapFindError")}(error, "groupBy", "${modelName}")
@@ -681,20 +836,15 @@ export class PrismaClient extends Context.Service<PrismaClient, BasePrismaClient
  */
 export class PrismaTransactionClientService extends Context.Service<PrismaTransactionClientService, PrismaNamespace.TransactionClient>()("PrismaTransactionClientService") {}
 
+${generatePrismaReplicasClass()}
+
 // Re-export the custom error type for convenience
 export { ${customError.className} }
 
 // Use the user-provided error mapper
 const mapError = mapPrismaError
 
-/**
- * Helper to get the current client - either the transaction client if in a transaction,
- * or the root client if not. Uses Effect.serviceOption to detect transaction context.
- */
-const clientOrTx = (client: BasePrismaClient) => Effect.map(
-  Effect.serviceOption(PrismaTransactionClientService),
-  Option.getOrElse(() => client),
-);
+${generateRoutingHelpers()}
 
 /**
  * Like Effect.acquireUseRelease, but allows the release function to fail.
@@ -804,8 +954,13 @@ const $begin = (
 const makePrismaService = Effect.gen(function* () {
   const client = yield* PrismaClient;
 
-  const prismaService: IPrismaService = {
+  let primaryService!: IPrismaService;
+  let replicaService!: IPrismaService;
+
+  const buildService = (pin: PrismaRoutingPin): IPrismaService => ({
       client,
+      $primary: () => primaryService,
+      $replica: () => replicaService,
       /**
        * Execute an effect within a database transaction.
        * All operations within the effect will be atomic - they either all succeed or all fail.
@@ -1018,9 +1173,11 @@ const makePrismaService = Effect.gen(function* () {
       ${rawSqlOperations}
 
       ${modelOperations}
-  };
+  });
 
-  return prismaService;
+  primaryService = buildService("primary");
+  replicaService = buildService("replica");
+  return buildService(undefined);
 });
 
 export class Prisma extends Context.Service<Prisma, IPrismaService>()("Prisma") {
@@ -1220,6 +1377,8 @@ export class PrismaClient extends Context.Service<PrismaClient, BasePrismaClient
  * Use \`Effect.serviceOption(PrismaTransactionClientService)\` to check if you're in a transaction.
  */
 export class PrismaTransactionClientService extends Context.Service<PrismaTransactionClientService, PrismaNamespace.TransactionClient>()("PrismaTransactionClientService") {}
+
+${generatePrismaReplicasClass()}
 
 export class PrismaUniqueConstraintError extends Data.TaggedError("PrismaUniqueConstraintError")<{
   cause: PrismaNamespace.PrismaClientKnownRequestError
@@ -1572,14 +1731,7 @@ const mapUpdateManyError = (error: unknown, operation: string, model: string): P
   throw error;
 }
 
-/**
- * Helper to get the current client - either the transaction client if in a transaction,
- * or the root client if not. Uses Effect.serviceOption to detect transaction context.
- */
-const clientOrTx = (client: BasePrismaClient) => Effect.map(
-  Effect.serviceOption(PrismaTransactionClientService),
-  Option.getOrElse(() => client),
-);
+${generateRoutingHelpers()}
 
 /**
  * Like Effect.acquireUseRelease, but allows the release function to fail.
@@ -1689,8 +1841,13 @@ const $begin = (
 const makePrismaService = Effect.gen(function* () {
   const client = yield* PrismaClient;
 
-  const prismaService: IPrismaService = {
+  let primaryService!: IPrismaService;
+  let replicaService!: IPrismaService;
+
+  const buildService = (pin: PrismaRoutingPin): IPrismaService => ({
       client,
+      $primary: () => primaryService,
+      $replica: () => replicaService,
       /**
        * Execute an effect within a database transaction.
        * All operations within the effect will be atomic - they either all succeed or all fail.
@@ -1902,9 +2059,11 @@ const makePrismaService = Effect.gen(function* () {
       ${rawSqlOperations}
 
       ${modelOperations}
-  };
+  });
 
-  return prismaService;
+  primaryService = buildService("primary");
+  replicaService = buildService("replica");
+  return buildService(undefined);
 });
 
 export class Prisma extends Context.Service<Prisma, IPrismaService>()("Prisma") {

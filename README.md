@@ -8,6 +8,7 @@ A Prisma generator that creates a fully-typed, Effect-based service wrapper for 
 - 🛡️ **Type Safety**: Full TypeScript support with generated types matching your Prisma schema.
 - 🧩 **Dependency Injection**: Integrates seamlessly with Effect's `Layer` and `Context` system.
 - 🔍 **Error Handling**: Automatically catches and wraps Prisma errors into typed `PrismaError` variants.
+- 🔀 **Read Replicas**: Optional `PrismaReplicas` service automatically routes reads to replicas, with `$primary()` / `$replica()` escape hatches for explicit routing.
 
 ## Installation
 
@@ -605,3 +606,104 @@ await Effect.runPromise(
 ```
 
 For long-running applications (like servers), you typically provide the layer once at startup and it stays connected for the lifetime of the application.
+
+### Read Replicas
+
+The generator emits an optional `PrismaReplicas` service tag that, when provided in
+the layer context, causes read operations to be routed to a randomly selected replica
+instead of the primary client. This is inspired by
+[`@prisma/extension-read-replicas`](https://github.com/prisma/extension-read-replicas)
+but implemented natively at the Effect service level (no extension runtime dependency).
+
+#### Layer setup
+
+Provide replicas alongside the primary `Prisma.layer(...)`:
+
+```typescript
+import { Layer } from "effect"
+import { Prisma, PrismaReplicas } from "./generated/effect"
+
+const AppLayer = Layer.mergeAll(
+  // Primary - handles writes, transactions, raw SQL
+  Prisma.layer({ adapter: primaryAdapter }),
+  // Replicas - handle reads (optional)
+  PrismaReplicas.layer([
+    { adapter: replica1Adapter },
+    { adapter: replica2Adapter },
+  ]),
+)
+```
+
+`PrismaReplicas` also exposes a `layerEffect` constructor (for when the replica configs
+come from an Effect, e.g. a config service) and a `layerFromClients` helper (for passing
+already-constructed `PrismaClient` instances whose lifecycle you manage yourself).
+
+Each replica client created by `PrismaReplicas.layer` is automatically disconnected when
+the layer scope ends (identical to `PrismaClient.layer`).
+
+#### Routing rules
+
+With `PrismaReplicas` present:
+
+| Operation | Routed to |
+|---|---|
+| `findUnique`, `findUniqueOrThrow`, `findFirst`, `findFirstOrThrow`, `findMany` | Random replica |
+| `count`, `aggregate`, `groupBy` | Random replica |
+| `create`, `createMany`, `createManyAndReturn`, `upsert` | Primary |
+| `update`, `updateMany`, `updateManyAndReturn` | Primary |
+| `delete`, `deleteMany` | Primary |
+| `$transaction`, `$transactionWith`, `$isolatedTransaction*` | Primary |
+| `$executeRaw*`, `$queryRaw*` | Primary (by default - SQL intent cannot be detected automatically) |
+| Any operation inside an active `$transaction` | Transaction client (replicas ignored) |
+
+Without `PrismaReplicas`, every operation is routed to the primary - behavior is identical
+to a service constructed without replicas, so you can adopt this feature incrementally.
+
+#### `$primary()` / `$replica()` escape hatches
+
+Two escape hatches are available on the generated service to force routing:
+
+- `prisma.$primary()` returns a sub-service where **all** operations (including reads)
+  are pinned to the primary client. Useful for read-your-own-writes scenarios or when you
+  need strong consistency.
+- `prisma.$replica()` returns a sub-service where **all** operations (including writes
+  and raw SQL) are pinned to a random replica. If no replicas are configured, falls back
+  to the primary.
+
+```typescript
+const program = Effect.gen(function* () {
+  const prisma = yield* Prisma
+
+  // Auto-routed: reads go to a random replica
+  const users = yield* prisma.user.findMany()
+
+  // Force the primary (e.g. after a recent write where replication lag matters)
+  const fresh = yield* prisma.$primary().user.findMany()
+
+  // Force a replica, even for raw SQL
+  const stats = yield* prisma.$replica().$queryRawUnsafe<Array<{ n: number }>>(
+    "SELECT count(*) as n FROM User",
+  )
+})
+```
+
+Sub-services returned by `$primary()` / `$replica()` implement the full `IPrismaService`
+interface and themselves expose `$primary()` / `$replica()`, so chaining type-checks:
+
+```typescript
+// These all type-check and resolve to the expected pinned sub-service:
+prisma.$primary().$replica().user.findMany()
+prisma.$replica().$primary().$transaction(/* ... */)
+```
+
+#### Notes
+
+- Transactions always execute against the primary - replicas cannot participate in a
+  multi-statement transaction. Inside a `$transaction` callback, every operation (reads
+  included) uses the transaction client.
+- Raw SQL (`$executeRaw*` / `$queryRaw*`) defaults to the primary because the generator
+  cannot inspect the SQL to decide whether it is a read or a write. Use `$replica()` to
+  opt a specific raw query into replica routing.
+- Replica selection is uniformly random. If you need weighted or round-robin selection,
+  provide your own `PrismaClient` instances via `PrismaReplicas.layerFromClients` and wrap
+  the selection in your own logic, or open an issue.

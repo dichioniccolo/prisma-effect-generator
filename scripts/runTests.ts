@@ -69,6 +69,7 @@ const runSuite = async (
   banner: string,
   generate: () => Promise<void>,
   keepDb: boolean,
+  extraDbFiles: ReadonlyArray<string> = [],
 ): Promise<void> => {
   console.log(`\n=== ${banner} ===\n`);
 
@@ -80,6 +81,9 @@ const runSuite = async (
 
   if (!keepDb) {
     await run("rm", ["-rf", `${dir}/dev.db`]);
+    for (const f of extraDbFiles) {
+      await run("rm", ["-rf", `${dir}/${f}`]);
+    }
   }
 };
 
@@ -91,6 +95,7 @@ const main = async (): Promise<void> => {
   const customErrorOnly = args.includes("--custom-error");
   const importExtensionOnly = args.includes("--import-extension");
   const supportsManyAndReturnOnly = args.includes("--supports-many-and-return");
+  const readReplicasOnly = args.includes("--read-replicas");
 
   if (clean || !(await exists("dist"))) {
     await run("pnpm", ["build"]);
@@ -159,6 +164,26 @@ const main = async (): Promise<void> => {
       keepDb,
     );
 
+  const runReadReplicasTests = () =>
+    runSuite(
+      "tests/read-replicas",
+      "Running Read Replicas tests",
+      async () => {
+        await run(
+          "pnpm",
+          ["exec", "prisma", "db", "push"],
+          "tests/read-replicas",
+        );
+        await run(
+          "pnpm",
+          ["exec", "prisma", "generate"],
+          "tests/read-replicas",
+        );
+      },
+      keepDb,
+      ["primary.db", "replica1.db", "replica2.db", "replica-lifecycle.db"],
+    );
+
   if (prisma7Only) {
     await runPrisma7Tests();
   } else if (customErrorOnly) {
@@ -167,11 +192,14 @@ const main = async (): Promise<void> => {
     await runImportExtensionTests();
   } else if (supportsManyAndReturnOnly) {
     await runSupportsManyAndReturnTests();
+  } else if (readReplicasOnly) {
+    await runReadReplicasTests();
   } else {
     await runPrisma7Tests();
     await runCustomErrorTests();
     await runImportExtensionTests();
     await runSupportsManyAndReturnTests();
+    await runReadReplicasTests();
   }
 };
 

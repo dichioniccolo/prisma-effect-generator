@@ -1,0 +1,21 @@
+{
+  "name": "read-replicas-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "prisma generate",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@effect/vitest": "^4.0.0-beta.50",
+    "@libsql/client": "^0.17.2",
+    "@prisma/adapter-libsql": "^7.7.0",
+    "effect": "^4.0.0-beta.50",
+    "prisma": "^7.7.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.4"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.7.0"
+  }
+}
