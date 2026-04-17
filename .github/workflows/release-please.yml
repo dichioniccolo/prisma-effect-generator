@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - beta
       - release/0.x
 
 permissions:
@@ -16,38 +17,53 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: googleapis/release-please-action@v4
-        id: release
+        id: release_stable
+        if: ${{ github.ref_name != 'beta' }}
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
           target-branch: ${{ github.ref_name }}
 
+      - uses: googleapis/release-please-action@v4
+        id: release_beta
+        if: ${{ github.ref_name == 'beta' }}
+        with:
+          config-file: release-please-config-beta.json
+          manifest-file: .release-please-manifest-beta.json
+          target-branch: ${{ github.ref_name }}
+
       # The following steps only run when a release was actually created
       - name: Checkout
-        if: ${{ steps.release.outputs.release_created }}
+        if: ${{ steps.release_stable.outputs.release_created || steps.release_beta.outputs.release_created }}
         uses: actions/checkout@v4
 
       - name: Setup Node.js
-        if: ${{ steps.release.outputs.release_created }}
+        if: ${{ steps.release_stable.outputs.release_created || steps.release_beta.outputs.release_created }}
         uses: actions/setup-node@v4
         with:
           node-version: "lts/*"
           registry-url: "https://registry.npmjs.org"
 
       - name: Setup pnpm
-        if: ${{ steps.release.outputs.release_created }}
+        if: ${{ steps.release_stable.outputs.release_created || steps.release_beta.outputs.release_created }}
         uses: pnpm/action-setup@v4
         with:
           version: 10
 
       - name: Install dependencies
-        if: ${{ steps.release.outputs.release_created }}
+        if: ${{ steps.release_stable.outputs.release_created || steps.release_beta.outputs.release_created }}
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        if: ${{ steps.release.outputs.release_created }}
+        if: ${{ steps.release_stable.outputs.release_created || steps.release_beta.outputs.release_created }}
         run: pnpm run build
 
       - name: Publish to npm registry
-        if: ${{ steps.release.outputs.release_created }}
-        run: npm publish --provenance --access public
+        if: ${{ steps.release_stable.outputs.release_created || steps.release_beta.outputs.release_created }}
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          if [[ "$VERSION" == *-* ]]; then
+            npm publish --provenance --access public --tag beta
+          else
+            npm publish --provenance --access public --tag latest
+          fi
