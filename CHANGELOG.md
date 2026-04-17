@@ -1,5 +1,12 @@
 # prisma-generator-effect
 
+## [1.1.2-beta.1](https://github.com/dichioniccolo/prisma-effect-generator/compare/v1.1.1-beta.1...v1.1.2-beta.1) (2026-04-17)
+
+
+### Bug Fixes
+
+* ci ([21c4895](https://github.com/dichioniccolo/prisma-effect-generator/commit/21c48955866d3237c14352435c938b11475347a4))
+
 ## [1.1.1-beta.1](https://github.com/dichioniccolo/prisma-effect-generator/compare/v1.1.0-beta.1...v1.1.1-beta.1) (2026-04-17)
 
 
