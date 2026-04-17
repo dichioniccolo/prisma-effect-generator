@@ -57,6 +57,7 @@ const typecheckGenerated = async (dir: string): Promise<void> => {
       "--target",
       "ES2022",
       "--skipLibCheck",
+      "--ignoreConfig",
       "generated/effect/index.ts",
     ],
     dir,
