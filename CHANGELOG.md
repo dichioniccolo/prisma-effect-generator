@@ -1,5 +1,12 @@
 # prisma-generator-effect
 
+## [1.1.3-beta.1](https://github.com/dichioniccolo/prisma-effect-generator/compare/v1.1.2-beta.1...v1.1.3-beta.1) (2026-04-17)
+
+
+### Features
+
+* add support for read replicas in Prisma generator ([c96897b](https://github.com/dichioniccolo/prisma-effect-generator/commit/c96897bdfc86b3afc590b07425956284d59620e8))
+
 ## [1.1.2-beta.1](https://github.com/dichioniccolo/prisma-effect-generator/compare/v1.1.1-beta.1...v1.1.2-beta.1) (2026-04-17)
 
 
