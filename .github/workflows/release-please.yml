@@ -1,31 +1,53 @@
-name: CI
+name: Release
 
 on:
   push:
-    branches: [main]
-  pull_request:
+    branches:
+      - main
+      - release/0.x
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write # Required for npm provenance
 
 jobs:
-  test:
+  release-please:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          target-branch: ${{ github.ref_name }}
+
+      # The following steps only run when a release was actually created
+      - name: Checkout
+        if: ${{ steps.release.outputs.release_created }}
         uses: actions/checkout@v4
 
-      - name: Install pnpm
+      - name: Setup Node.js
+        if: ${{ steps.release.outputs.release_created }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Setup pnpm
+        if: ${{ steps.release.outputs.release_created }}
         uses: pnpm/action-setup@v4
         with:
           version: 10
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "25"
-          cache: "pnpm"
-
       - name: Install dependencies
+        if: ${{ steps.release.outputs.release_created }}
         run: pnpm install --frozen-lockfile
 
-      - name: Run tests
-        run: pnpm test
+      - name: Build
+        if: ${{ steps.release.outputs.release_created }}
+        run: pnpm run build
+
+      - name: Publish to npm registry
+        if: ${{ steps.release.outputs.release_created }}
+        run: npm publish --provenance --access public
