@@ -1,5 +1,21 @@
 # prisma-generator-effect
 
+## [1.1.0](https://github.com/dichioniccolo/prisma-effect-generator/compare/v1.0.0...v1.1.0) (2026-04-17)
+
+
+### Features
+
+* add repository to package.json ([4e41cc3](https://github.com/dichioniccolo/prisma-effect-generator/commit/4e41cc3da412d23ea84cc0d448854aab564a4a2a))
+* add skills ([7363672](https://github.com/dichioniccolo/prisma-effect-generator/commit/7363672e1929c5decd484fbbda33a28cb4306a75))
+* add supports many and return test ([5f7c42f](https://github.com/dichioniccolo/prisma-effect-generator/commit/5f7c42fcd9e76c3cb82dbfe4ef76be30ec7c06f5))
+* update effect to 4 beta and prisma to latest ([627fead](https://github.com/dichioniccolo/prisma-effect-generator/commit/627feade1f2f8a5671792e22a08286e462b0d207))
+
+
+### Bug Fixes
+
+* release please for beta ([972f910](https://github.com/dichioniccolo/prisma-effect-generator/commit/972f91086a28a49871c70fc5eb1d730cf4a967a1))
+* release please workflow ([cb6eee9](https://github.com/dichioniccolo/prisma-effect-generator/commit/cb6eee9db5d842d662a5dbeb734e274765bf0895))
+
 ## [1.2.0-beta.1](https://github.com/dichioniccolo/prisma-effect-generator/compare/v1.1.0-beta.1...v1.2.0-beta.1) (2026-04-17)
 
 
