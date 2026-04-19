@@ -1,5 +1,13 @@
 # prisma-generator-effect
 
+## [1.1.3-beta.2](https://github.com/dichioniccolo/prisma-effect-generator/compare/v1.1.3-beta.1...v1.1.3-beta.2) (2026-04-19)
+
+
+### Bug Fixes
+
+* use prerelease versioning strategy for beta releases ([1319649](https://github.com/dichioniccolo/prisma-effect-generator/commit/13196490cc25bee310790f95731a7cccb9dbccf7))
+* use prerelease versioning strategy to correctly increment beta version numbers (Vibe Kanban) ([16a345d](https://github.com/dichioniccolo/prisma-effect-generator/commit/16a345d4293cff5a0241d71b4a53df7ad04a8b70))
+
 ## [1.1.3-beta.1](https://github.com/dichioniccolo/prisma-effect-generator/compare/v1.1.2-beta.1...v1.1.3-beta.1) (2026-04-17)
 
 
