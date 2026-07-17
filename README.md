@@ -29,7 +29,7 @@ Add the generator to your `schema.prisma` file:
 ```prisma
 // prisma/schema.prisma
 generator client {
-  provider        = "prisma-client-js"
+  provider        = "prisma-client"
   output          = "./generated/client"
 }
 
@@ -114,7 +114,7 @@ const program = Effect.gen(function* () {
   return users;
 });
 
-// Run with the default layer (Prisma 6)
+// Run with the default layer
 Effect.runPromise(program.pipe(Effect.provide(Prisma.Live)));
 ```
 
@@ -126,7 +126,7 @@ The generator provides several ways to create layers:
 import { Prisma, PrismaClient } from "@prisma/effect";
 import { Effect, Layer } from "effect";
 
-// 1. Default layer (Prisma 6, no options)
+// 1. Default layer (no options)
 Prisma.Live
 
 // 2. Layer with static options
@@ -140,7 +140,7 @@ Prisma.layerEffect(
   })
 )
 
-// 4. For Prisma 7 with adapters
+// 4. With driver adapters
 Prisma.layerEffect(
   Effect.gen(function* () {
     const pool = yield* PostgresPool;
@@ -188,7 +188,7 @@ The generated `Prisma` service mirrors your Prisma Client API but returns `Effec
 
 | API | Description |
 |-----|-------------|
-| `Prisma.Live` | Complete default layer (Prisma 6, no options) |
+| `Prisma.Live` | Complete default layer (no options) |
 | `Prisma.layer(opts)` | Complete layer with PrismaClient options |
 | `Prisma.layerEffect(effect)` | Complete layer with effectful options |
 | `Prisma.Default` | Just the service layer (for advanced composition) |
