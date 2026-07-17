@@ -1,5 +1,16 @@
 # prisma-generator-effect
 
+## [2.0.0-beta.2](https://github.com/dichioniccolo/prisma-effect-generator/compare/v1.1.3-beta.2...v2.0.0-beta.2) (2026-07-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* Prisma 6 (`prisma-client-js` provider) is no longer supported; use Prisma 7 with the `prisma-client` generator provider.
+
+### Features
+
+* drop Prisma 6 support ([86d8d9a](https://github.com/dichioniccolo/prisma-effect-generator/commit/86d8d9a241af0c58513c9e68351e529356648de8))
+
 ## [1.1.3-beta.2](https://github.com/dichioniccolo/prisma-effect-generator/compare/v1.1.3-beta.1...v1.1.3-beta.2) (2026-04-19)
 
 
