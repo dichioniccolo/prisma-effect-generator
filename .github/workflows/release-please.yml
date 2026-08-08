@@ -48,7 +48,7 @@ jobs:
         if: ${{ steps.release_stable.outputs.release_created || steps.release_beta.outputs.release_created }}
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 11
 
       - name: Install dependencies
         if: ${{ steps.release_stable.outputs.release_created || steps.release_beta.outputs.release_created }}
