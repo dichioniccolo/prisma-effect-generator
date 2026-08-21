@@ -20,7 +20,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      id-token: write # Required for npm provenance
+      id-token: write # Mints the OIDC token npm trusted publishing authenticates with
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,16 +31,28 @@ jobs:
           # won't trigger further workflow runs.
           persist-credentials: false
 
+      # Held at 10 deliberately. pnpm 11.0.0-11.0.8 regressed npm's OIDC trusted
+      # publishing -- `changeset publish` fails with a masked E404 on every
+      # package (pnpm/pnpm#11566). Fixed in 11.0.9+, but only alongside
+      # pnpm/action-setup v6.0.6+. The 10.x line never had the bug.
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10
 
+      # No registry-url on purpose: it makes setup-node write an .npmrc with an
+      # `_authToken` line, and any static _authToken makes the client skip the
+      # OIDC exchange entirely, so trusted publishing silently falls back to
+      # token auth and 404s (changesets/changesets#2099).
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "lts/*"
-          registry-url: "https://registry.npmjs.org"
+
+      # Trusted publishing needs npm >= 11.5.1; don't rely on whatever the Node
+      # release happens to bundle.
+      - name: Upgrade npm for OIDC support
+        run: npm install -g npm@11
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -59,6 +71,10 @@ jobs:
           # A personal access token, not the default GITHUB_TOKEN, so pushes to
           # the release branch trigger this workflow again.
           github-token: ${{ secrets.CHANGESET_GITHUB_TOKEN }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true
+        # No NODE_AUTH_TOKEN: npm auth comes from the OIDC token minted via the
+        # id-token permission above (trusted publishing is configured for this
+        # package on npmjs.com, pinned to this workflow filename).
+        #
+        # No NPM_CONFIG_PROVENANCE either: provenance is automatic under trusted
+        # publishing, and forcing it explicitly breaks registry auth
+        # (changesets/changesets#1914).
