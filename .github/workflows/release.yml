@@ -23,7 +23,7 @@ jobs:
       id-token: write # Mints the OIDC token npm trusted publishing authenticates with
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           # Required so the token used below (not the default GITHUB_TOKEN) is
@@ -36,7 +36,7 @@ jobs:
       # package (pnpm/pnpm#11566). Fixed in 11.0.9+, but only alongside
       # pnpm/action-setup v6.0.6+. The 10.x line never had the bug.
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 10
 
@@ -45,7 +45,7 @@ jobs:
       # OIDC exchange entirely, so trusted publishing silently falls back to
       # token auth and 404s (changesets/changesets#2099).
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "lts/*"
 
@@ -64,7 +64,7 @@ jobs:
       # mode is on. v2 dropped that scanner. Note the inputs are kebab-case here.
       - name: Create Release Pull Request or Publish
         id: changesets
-        uses: changesets/action@d0ee272882939fa35f22d979828acb7e61e0bd47 # v2.0.0-next.4
+        uses: changesets/action@fdf536a68c4154480c89b42547f8102cf0d8bc47 # v2.1.1
         with:
           version-script: pnpm run changeset-version
           publish-script: pnpm run changeset-publish

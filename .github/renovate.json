@@ -1,10 +1,15 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:base"
-  ],
-  "packageRules": [],
-  "updateInternalDeps": true,
+  "extends": ["config:recommended"],
   "rangeStrategy": "bump",
-  "automerge": true
+  "automerge": true,
+  "ignorePaths": ["**/node_modules/**"],
+  "packageRules": [
+    {
+      "description": "Effect v4 ships under the 'rc' dist-tag, not 'latest' (which still points at the v3 line), so Renovate would otherwise never see a v4 update. Grouping keeps effect and every @effect/* package on a single version in one PR, across the root package and each project under tests/ -- they must match or the generated code fails to typecheck. Switch followTag to 'latest' once v4 is stable.",
+      "matchPackageNames": ["effect", "@effect/**"],
+      "followTag": "rc",
+      "groupName": "effect v4"
+    }
+  ]
 }
