@@ -51,6 +51,7 @@ jobs:
         with:
           version: pnpm run changeset-version
           publish: pnpm run changeset-publish
+          createGithubReleases: false
           # A personal access token, not the default GITHUB_TOKEN, so pushes to
           # the release branch trigger this workflow again.
           github-token: ${{ secrets.CHANGESET_GITHUB_TOKEN }}
