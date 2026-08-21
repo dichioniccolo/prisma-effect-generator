@@ -1,5 +1,12 @@
 # prisma-generator-effect
 
+## [2.0.0-beta.3](https://github.com/dichioniccolo/prisma-effect-generator/compare/v2.0.0-beta.2...v2.0.0-beta.3) (2026-08-21)
+
+
+### Dependencies
+
+* **deps:** bump effect to 4.0.0-beta.105 and prisma to 7.9.1 ([#21](https://github.com/dichioniccolo/prisma-effect-generator/issues/21)) ([035aa52](https://github.com/dichioniccolo/prisma-effect-generator/commit/035aa527d07e1ab9a9fffc99587eae52606bbfe2))
+
 ## [2.0.0-beta.2](https://github.com/dichioniccolo/prisma-effect-generator/compare/v1.1.3-beta.2...v2.0.0-beta.2) (2026-07-17)
 
 
