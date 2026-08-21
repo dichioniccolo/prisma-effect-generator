@@ -45,22 +45,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Create Release Pull Request
+      # v2 is required, not v1: the v1 bundle still carries the pre-v2 changeset
+      # migration scanner, which treats every directory under .changeset/ as a
+      # legacy changeset folder. That makes it try to read .changeset/pre/changes.md
+      # -- a file that never exists -- and abort with ENOENT whenever prerelease
+      # mode is on. v2 dropped that scanner. Note the inputs are kebab-case here.
+      - name: Create Release Pull Request or Publish
         id: changesets
-        uses: changesets/action@v1
+        uses: changesets/action@d0ee272882939fa35f22d979828acb7e61e0bd47 # v2.0.0-next.4
         with:
-          version: pnpm run changeset-version
+          version-script: pnpm run changeset-version
+          publish-script: pnpm run changeset-publish
           # A personal access token, not the default GITHUB_TOKEN, so pushes to
           # the release branch trigger this workflow again.
           github-token: ${{ secrets.CHANGESET_GITHUB_TOKEN }}
-
-      # Publish ourselves instead of via the `publish` input above: changesets/action's
-      # combined publish + GitHub Releases path errors on this repo (ENOENT on an
-      # internal .changeset/pre/*.md bookkeeping file it expects but never creates).
-      # This is the "Custom Publishing" pattern from the action's own README.
-      - name: Publish to npm
-        if: steps.changesets.outputs.hasChangesets == 'false'
-        run: pnpm run changeset-publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
