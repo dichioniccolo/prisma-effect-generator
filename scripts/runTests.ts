@@ -1,44 +1,76 @@
-import { access } from "node:fs/promises";
-import { constants } from "node:fs";
-import { spawn } from "node:child_process";
+import { NodeRuntime, NodeServices } from "@effect/platform-node";
+import {
+  Console,
+  Data,
+  Effect,
+  FileSystem,
+  Option,
+  Ref,
+  Result,
+  Stream,
+} from "effect";
+import { Command, Flag } from "effect/unstable/cli";
+import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process";
+import { availableParallelism } from "node:os";
 
-const run = async (
-  cmd: string,
-  args: string[],
-  cwd?: string,
-): Promise<void> => {
-  const prefix = cwd ? `[${cwd}] ` : "";
-  console.log(`${prefix}${cmd} ${args.join(" ")}`);
-
-  await new Promise<void>((resolve, reject) => {
-    const child = spawn(cmd, args, {
-      cwd,
-      stdio: "inherit",
-      env: process.env,
-    });
-
-    child.on("error", reject);
-    child.on("exit", (code) => {
-      if (code === 0) {
-        resolve();
-        return;
-      }
-      reject(new Error(`Command failed with exit code ${code ?? "unknown"}`));
-    });
-  });
-};
-
-const exists = async (target: string): Promise<boolean> => {
-  try {
-    await access(target, constants.F_OK);
-    return true;
-  } catch {
-    return false;
+class CommandError extends Data.TaggedError("CommandError")<{
+  readonly command: string;
+  readonly cwd: string | undefined;
+  readonly exitCode: number;
+}> {
+  get message(): string {
+    const where = this.cwd === undefined ? "" : ` in ${this.cwd}`;
+    return `\`${this.command}\`${where} failed with exit code ${this.exitCode}`;
   }
-};
+}
 
-const typecheckGenerated = async (dir: string): Promise<void> => {
-  await run(
+class SuiteError extends Data.TaggedError("SuiteError")<{
+  readonly suite: string;
+  readonly reason: string;
+}> {
+  get message(): string {
+    return `${this.suite}: ${this.reason}`;
+  }
+}
+
+/** Appends a line to a suite's output, either live or into its buffer. */
+type Logger = (line: string) => Effect.Effect<void>;
+
+const runCommand = (
+  cmd: string,
+  args: ReadonlyArray<string>,
+  cwd: string | undefined,
+  log: Logger,
+) =>
+  Effect.gen(function* () {
+    const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
+    const line = `${cmd} ${args.join(" ")}`;
+
+    yield* log(`${cwd === undefined ? "" : `[${cwd}] `}${line}`);
+
+    const handle = yield* spawner.spawn(
+      ChildProcess.make(cmd, [...args], {
+        ...(cwd === undefined ? {} : { cwd }),
+        extendEnv: true,
+      }),
+    );
+
+    // Interleave stdout and stderr so the output reads like a terminal session.
+    yield* handle.all.pipe(
+      Stream.decodeText(),
+      Stream.splitLines,
+      Stream.runForEach(log),
+    );
+
+    const exitCode = yield* handle.exitCode;
+
+    if (exitCode !== ChildProcessSpawner.ExitCode(0)) {
+      return yield* new CommandError({ command: line, cwd, exitCode });
+    }
+  }).pipe(Effect.scoped);
+
+const typecheckGenerated = (dir: string, log: Logger) =>
+  runCommand(
     "npx",
     [
       "tsc",
@@ -61,149 +93,216 @@ const typecheckGenerated = async (dir: string): Promise<void> => {
       "generated/effect/index.ts",
     ],
     dir,
+    log,
   );
-};
 
-const runSuite = async (
-  dir: string,
-  banner: string,
-  generate: () => Promise<void>,
-  keepDb: boolean,
-  extraDbFiles: ReadonlyArray<string> = [],
-): Promise<void> => {
-  console.log(`\n=== ${banner} ===\n`);
+interface Suite {
+  readonly name: string;
+  readonly dir: string;
+  readonly banner: string;
+  /** Whether the suite needs `prisma db push` before generating. */
+  readonly dbPush: boolean;
+  /** Extra database files to remove after the suite, relative to `dir`. */
+  readonly extraDbFiles?: ReadonlyArray<string>;
+}
 
-  await run("pnpm", ["install"], dir);
+const suites: ReadonlyArray<Suite> = [
+  {
+    name: "prisma7",
+    dir: "tests/prisma7",
+    banner: "Running Prisma 7 Tests",
+    dbPush: true,
+  },
+  {
+    name: "custom-error",
+    dir: "tests/custom-error",
+    banner: "Running Custom Error Tests",
+    dbPush: true,
+  },
+  {
+    name: "import-extension",
+    dir: "tests/import-extension",
+    banner: "Running Import Extension Tests",
+    dbPush: true,
+  },
+  {
+    name: "supports-many-and-return",
+    dir: "tests/supports-many-and-return",
+    banner: "Running supports-many-and-return tests",
+    dbPush: false,
+  },
+  {
+    name: "read-replicas",
+    dir: "tests/read-replicas",
+    banner: "Running Read Replicas tests",
+    dbPush: true,
+    extraDbFiles: [
+      "primary.db",
+      "replica1.db",
+      "replica2.db",
+      "replica-lifecycle.db",
+    ],
+  },
+];
 
-  await generate();
-  await typecheckGenerated(dir);
-  await run("pnpm", ["test"], dir);
+const suiteNames = suites.map((s) => s.name) as [string, ...Array<string>];
 
-  if (!keepDb) {
-    await run("rm", ["-rf", `${dir}/dev.db`]);
-    for (const f of extraDbFiles) {
-      await run("rm", ["-rf", `${dir}/${f}`]);
+const runSuite = (suite: Suite, keepDb: boolean, log: Logger) =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+
+    yield* log(`\n=== ${suite.banner} ===\n`);
+
+    yield* runCommand("pnpm", ["install"], suite.dir, log);
+
+    if (suite.dbPush) {
+      yield* runCommand(
+        "pnpm",
+        ["exec", "prisma", "db", "push"],
+        suite.dir,
+        log,
+      );
     }
-  }
-};
+    yield* runCommand("pnpm", ["exec", "prisma", "generate"], suite.dir, log);
 
-const main = async (): Promise<void> => {
-  const args = process.argv;
-  const clean = args.includes("--clean");
-  const keepDb = args.includes("--keep-db");
-  const prisma7Only = args.includes("--prisma7");
-  const customErrorOnly = args.includes("--custom-error");
-  const importExtensionOnly = args.includes("--import-extension");
-  const supportsManyAndReturnOnly = args.includes("--supports-many-and-return");
-  const readReplicasOnly = args.includes("--read-replicas");
+    yield* typecheckGenerated(suite.dir, log);
+    yield* runCommand("pnpm", ["test"], suite.dir, log);
 
-  if (clean || !(await exists("dist"))) {
-    await run("pnpm", ["build"]);
-  }
+    if (!keepDb) {
+      const dbFiles = ["dev.db", ...(suite.extraDbFiles ?? [])];
+      yield* Effect.forEach(dbFiles, (file) =>
+        fs.remove(`${suite.dir}/${file}`, { recursive: true, force: true }),
+      );
+    }
+  }).pipe(
+    Effect.mapError(
+      (error) => new SuiteError({ suite: suite.dir, reason: error.message }),
+    ),
+  );
 
-  if (clean) {
-    await run("tsc", ["--noEmit", "--project", "tsconfig.test.json"]);
-  }
+/**
+ * Runs a suite, buffering its output when suites run concurrently so that
+ * interleaved child process output stays readable.
+ */
+const runSuiteBuffered = (suite: Suite, keepDb: boolean, buffered: boolean) =>
+  Effect.gen(function* () {
+    if (!buffered) {
+      return yield* runSuite(suite, keepDb, (line) => Console.log(line)).pipe(
+        Effect.result,
+      );
+    }
 
-  const runPrisma7Tests = () =>
-    runSuite(
-      "tests/prisma7",
-      "Running Prisma 7 Tests",
-      async () => {
-        await run("pnpm", ["exec", "prisma", "db", "push"], "tests/prisma7");
-        await run("pnpm", ["exec", "prisma", "generate"], "tests/prisma7");
-      },
-      keepDb,
+    const output = yield* Ref.make<Array<string>>([]);
+    const log: Logger = (line) =>
+      Ref.update(output, (lines) => [...lines, line]);
+
+    const result = yield* runSuite(suite, keepDb, log).pipe(Effect.result);
+
+    yield* Effect.forEach(yield* Ref.get(output), (line) => Console.log(line));
+
+    return result;
+  });
+
+const resolveConcurrency = (
+  requested: Option.Option<number>,
+  suiteCount: number,
+): number =>
+  Option.match(requested, {
+    onSome: (n) => Math.max(1, n),
+    onNone: () => Math.max(1, Math.min(suiteCount, availableParallelism())),
+  });
+
+const runTests = Command.make(
+  "run-tests",
+  {
+    suite: Flag.choice("suite", suiteNames).pipe(
+      Flag.withDescription(
+        "Suite to run; repeat to select several (default: all)",
+      ),
+      Flag.atLeast(0),
+    ),
+    clean: Flag.boolean("clean").pipe(
+      Flag.withDescription("Rebuild the generator and typecheck the scripts"),
+      Flag.withDefault(false),
+    ),
+    keepDb: Flag.boolean("keep-db").pipe(
+      Flag.withDescription("Keep the SQLite databases created by the suites"),
+      Flag.withDefault(false),
+    ),
+    concurrency: Flag.integer("concurrency").pipe(
+      Flag.withAlias("c"),
+      Flag.withDescription(
+        "How many suites to run at once (default: one per CPU, capped at the suite count)",
+      ),
+      Flag.optional,
+    ),
+  },
+  Effect.fn(function* ({ clean, concurrency, keepDb, suite }) {
+    const fs = yield* FileSystem.FileSystem;
+
+    const selected =
+      suite.length === 0
+        ? suites
+        : suites.filter((s) => suite.includes(s.name));
+
+    if (clean || !(yield* fs.exists("dist"))) {
+      yield* runCommand("pnpm", ["build"], undefined, Console.log);
+    }
+
+    if (clean) {
+      yield* runCommand(
+        "npx",
+        ["tsc", "--noEmit", "--project", "tsconfig.test.json"],
+        undefined,
+        Console.log,
+      );
+    }
+
+    const parallelism = resolveConcurrency(concurrency, selected.length);
+    const buffered = parallelism > 1;
+
+    if (buffered) {
+      yield* Console.log(
+        `Running ${selected.length} suites with concurrency ${parallelism}`,
+      );
+    }
+
+    const results = yield* Effect.forEach(
+      selected,
+      (s) => runSuiteBuffered(s, keepDb, buffered),
+      { concurrency: parallelism },
     );
 
-  const runCustomErrorTests = () =>
-    runSuite(
-      "tests/custom-error",
-      "Running Custom Error Tests",
-      async () => {
-        await run(
-          "pnpm",
-          ["exec", "prisma", "db", "push"],
-          "tests/custom-error",
-        );
-        await run("pnpm", ["exec", "prisma", "generate"], "tests/custom-error");
-      },
-      keepDb,
+    // Every suite runs to completion, so a failure reports all of them at once.
+    const failures = results.flatMap((result) =>
+      Result.isFailure(result) ? [result.failure] : [],
     );
 
-  const runImportExtensionTests = () =>
-    runSuite(
-      "tests/import-extension",
-      "Running Import Extension Tests",
-      async () => {
-        await run(
-          "pnpm",
-          ["exec", "prisma", "db", "push"],
-          "tests/import-extension",
-        );
-        await run(
-          "pnpm",
-          ["exec", "prisma", "generate"],
-          "tests/import-extension",
-        );
-      },
-      keepDb,
+    if (failures.length > 0) {
+      yield* Console.error(`\n${failures.length} suite(s) failed:`);
+      yield* Effect.forEach(failures, (error) =>
+        Console.error(`  - ${error.message}`),
+      );
+      yield* Effect.sync(() => {
+        process.exitCode = 1;
+      });
+    }
+  }),
+).pipe(Command.withDescription("Run the generator's integration test suites"));
+
+const list = Command.make(
+  "list",
+  {},
+  Effect.fn(function* () {
+    yield* Effect.forEach(suites, (s) =>
+      Console.log(`${s.name.padEnd(26)}${s.dir}`),
     );
+  }),
+).pipe(Command.withDescription("List the available test suites"));
 
-  const runSupportsManyAndReturnTests = () =>
-    runSuite(
-      "tests/supports-many-and-return",
-      "Running supports-many-and-return tests",
-      async () => {
-        await run(
-          "pnpm",
-          ["exec", "prisma", "generate"],
-          "tests/supports-many-and-return",
-        );
-      },
-      keepDb,
-    );
-
-  const runReadReplicasTests = () =>
-    runSuite(
-      "tests/read-replicas",
-      "Running Read Replicas tests",
-      async () => {
-        await run(
-          "pnpm",
-          ["exec", "prisma", "db", "push"],
-          "tests/read-replicas",
-        );
-        await run(
-          "pnpm",
-          ["exec", "prisma", "generate"],
-          "tests/read-replicas",
-        );
-      },
-      keepDb,
-      ["primary.db", "replica1.db", "replica2.db", "replica-lifecycle.db"],
-    );
-
-  if (prisma7Only) {
-    await runPrisma7Tests();
-  } else if (customErrorOnly) {
-    await runCustomErrorTests();
-  } else if (importExtensionOnly) {
-    await runImportExtensionTests();
-  } else if (supportsManyAndReturnOnly) {
-    await runSupportsManyAndReturnTests();
-  } else if (readReplicasOnly) {
-    await runReadReplicasTests();
-  } else {
-    await runPrisma7Tests();
-    await runCustomErrorTests();
-    await runImportExtensionTests();
-    await runSupportsManyAndReturnTests();
-    await runReadReplicasTests();
-  }
-};
-
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+runTests.pipe(
+  Command.withSubcommands([list]),
+  Command.run({ version: "2.0.0-rc.1" }),
+  Effect.provide(NodeServices.layer),
+  NodeRuntime.runMain,
+);

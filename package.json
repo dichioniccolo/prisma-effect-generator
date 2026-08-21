@@ -36,6 +36,7 @@
   "devDependencies": {
     "@changesets/changelog-github": "^1.0.0",
     "@changesets/cli": "^3.0.1",
+    "@effect/platform-node": "4.0.0-rc.111",
     "@prisma/client": "^7.9.1",
     "@types/node": "^26.1.2",
     "prisma": "^7.9.1",
