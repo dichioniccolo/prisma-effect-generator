@@ -1,5 +1,11 @@
 # prisma-generator-effect
 
+## 2.0.0-rc.1
+
+### Patch Changes
+
+- [`6d56bc5`](https://github.com/dichioniccolo/prisma-effect-generator/commit/6d56bc56d9c27f225a93658ea615333e913c07ac) Thanks [@dichioniccolo](https://github.com/dichioniccolo)! - Upgrade to Effect v4 RC (`effect`, `@effect/platform-node`, `@effect/vitest` at `4.0.0-rc.111`) and switch release tooling from release-please to Changesets.
+
 ## [2.0.0-beta.2](https://github.com/dichioniccolo/prisma-effect-generator/compare/v1.1.3-beta.2...v2.0.0-beta.2) (2026-07-17)
 
 
