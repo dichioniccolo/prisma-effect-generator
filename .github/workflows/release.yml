@@ -45,16 +45,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Create Release Pull Request or Publish
+      - name: Create Release Pull Request
         id: changesets
         uses: changesets/action@v1
         with:
           version: pnpm run changeset-version
-          publish: pnpm run changeset-publish
-          createGithubReleases: false
           # A personal access token, not the default GITHUB_TOKEN, so pushes to
           # the release branch trigger this workflow again.
           github-token: ${{ secrets.CHANGESET_GITHUB_TOKEN }}
+
+      # Publish ourselves instead of via the `publish` input above: changesets/action's
+      # combined publish + GitHub Releases path errors on this repo (ENOENT on an
+      # internal .changeset/pre/*.md bookkeeping file it expects but never creates).
+      # This is the "Custom Publishing" pattern from the action's own README.
+      - name: Publish to npm
+        if: steps.changesets.outputs.hasChangesets == 'false'
+        run: pnpm run changeset-publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
