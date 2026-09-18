@@ -56,6 +56,8 @@ export class OutputWriter extends Context.Service<OutputWriter>()(
               (cause) => new FileWriteError({ path: target, cause }),
             ),
             Effect.as(target),
+            Effect.tap(() => Effect.logDebug("wrote file")),
+            Effect.annotateLogs("file", target),
           );
         });
       });
