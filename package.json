@@ -13,6 +13,7 @@
   ],
   "scripts": {
     "build": "tsc && chmod +x dist/index.js",
+    "check": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "test": "tsx scripts/runTests.ts",
     "prepublishOnly": "pnpm run build",
     "changeset": "changeset",
