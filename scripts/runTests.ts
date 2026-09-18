@@ -215,21 +215,21 @@ const resolveConcurrency = (
 const runTests = Command.make(
   "run-tests",
   {
-    suite: Flag.choice("suite", suiteNames).pipe(
+    suite: Flag.Literals("suite", suiteNames).pipe(
       Flag.withDescription(
         "Suite to run; repeat to select several (default: all)",
       ),
       Flag.atLeast(0),
     ),
-    clean: Flag.boolean("clean").pipe(
+    clean: Flag.Boolean("clean").pipe(
       Flag.withDescription("Rebuild the generator and typecheck the scripts"),
       Flag.withDefault(false),
     ),
-    keepDb: Flag.boolean("keep-db").pipe(
+    keepDb: Flag.Boolean("keep-db").pipe(
       Flag.withDescription("Keep the SQLite databases created by the suites"),
       Flag.withDefault(false),
     ),
-    concurrency: Flag.integer("concurrency").pipe(
+    concurrency: Flag.Int("concurrency").pipe(
       Flag.withAlias("c"),
       Flag.withDescription(
         "How many suites to run at once (default: one per CPU, capped at the suite count)",
