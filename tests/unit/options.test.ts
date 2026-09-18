@@ -1,8 +1,12 @@
 import { describe, expect, it } from "@effect/vitest";
-import { Effect } from "effect";
+import { Effect, Option, Schema } from "effect";
 import type { GeneratorConfig } from "@prisma/generator-helper";
 import { formatGeneratorError } from "../../src/errors.js";
-import { decodeGeneratorSettings } from "../../src/options.js";
+import {
+  decodeGeneratorSettings,
+  ErrorImport,
+  GeneratorSettings,
+} from "../../src/options.js";
 
 const generator = (
   config: GeneratorConfig["config"],
@@ -22,12 +26,15 @@ const failure = (config: GeneratorConfig["config"]) =>
 describe("decodeGeneratorSettings", () => {
   it.effect("applies the documented defaults", () =>
     Effect.gen(function* () {
-      expect(yield* decode({})).toStrictEqual({
-        output: "/project/generated/effect",
-        clientImportPath: "@prisma/client",
-        importFileExtension: "",
-        enableTelemetry: false,
-      });
+      expect(yield* decode({})).toStrictEqual(
+        new GeneratorSettings({
+          output: "/project/generated/effect",
+          clientImportPath: "@prisma/client",
+          errorImportPath: Option.none(),
+          importFileExtension: "",
+          enableTelemetry: false,
+        }),
+      );
     }),
   );
 
@@ -40,13 +47,35 @@ describe("decodeGeneratorSettings", () => {
           importFileExtension: "js",
           enableTelemetry: "true",
         }),
-      ).toStrictEqual({
-        output: "/project/generated/effect",
+      ).toStrictEqual(
+        new GeneratorSettings({
+          output: "/project/generated/effect",
+          clientImportPath: "../client/client.js",
+          errorImportPath: Option.some(
+            new ErrorImport({
+              module: "./errors",
+              exportName: "MyPrismaError",
+            }),
+          ),
+          importFileExtension: "js",
+          enableTelemetry: true,
+        }),
+      );
+    }),
+  );
+
+  it.effect("encodes back to the values it decoded", () =>
+    Effect.gen(function* () {
+      const config = {
         clientImportPath: "../client/client.js",
-        errorImportPath: { module: "./errors", exportName: "MyPrismaError" },
+        errorImportPath: "./errors#MyPrismaError",
         importFileExtension: "js",
-        enableTelemetry: true,
-      });
+        enableTelemetry: "true",
+      };
+      const settings = yield* decode(config);
+      expect(
+        yield* Schema.encodeEffect(GeneratorSettings)(settings),
+      ).toStrictEqual({ ...config, output: "/project/generated/effect" });
     }),
   );
 
@@ -63,7 +92,7 @@ describe("decodeGeneratorSettings", () => {
         errorImportPath: "",
         importFileExtension: "mjs",
       });
-      expect(settings.errorImportPath).toBeUndefined();
+      expect(settings.errorImportPath).toStrictEqual(Option.none());
       expect(settings.importFileExtension).toBe("mjs");
     }),
   );
@@ -73,10 +102,11 @@ describe("decodeGeneratorSettings", () => {
       const settings = yield* decode({
         errorImportPath: "@acme/errors#DbError",
       });
-      expect(settings.errorImportPath).toStrictEqual({
-        module: "@acme/errors",
-        exportName: "DbError",
-      });
+      expect(settings.errorImportPath).toStrictEqual(
+        Option.some(
+          new ErrorImport({ module: "@acme/errors", exportName: "DbError" }),
+        ),
+      );
     }),
   );
 

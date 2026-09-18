@@ -29,8 +29,8 @@ Node (see `.nvmrc`) and pnpm. Effect v4 (`effect`, `@effect/platform-node`,
   messages.
 - `src/output.ts`, `src/formatter.ts`: `OutputWriter` and `CodeFormatter`
   services (disk and Biome).
-- `src/templates.ts`: the pure templating. Strings in, strings out; keep it
-  free of Effect.
+- `src/templates.ts`: the pure templating. Strings in, strings out; data
+  types like `Option` are fine, effects are not.
 - `tests/unit/`: unit tests, with an in-memory `FileSystem` and file
   snapshots of the rendered service.
 - `tests/<suite>/`: integration projects, each with its own lockfile.

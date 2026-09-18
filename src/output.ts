@@ -1,11 +1,15 @@
-import { Context, Effect, FileSystem, Layer, Path } from "effect";
+import { Context, Effect, FileSystem, Layer, Path, Schema } from "effect";
+import type { PlatformError } from "effect/PlatformError";
 import { FileWriteError, OutputDirectoryError } from "./errors.js";
 
 /** A file to emit, with its path relative to the output directory. */
-export interface GeneratedFile {
-  readonly path: string;
-  readonly content: string;
-}
+export class GeneratedFile extends Schema.Class<GeneratedFile>("GeneratedFile")(
+  { path: Schema.NonEmptyString, content: Schema.String },
+  {
+    description:
+      "Generated source, addressed relative to the output directory.",
+  },
+) {}
 
 /** Owns the output directory: the only code that writes to disk. */
 export class OutputWriter extends Context.Service<OutputWriter>()(
@@ -28,26 +32,18 @@ export class OutputWriter extends Context.Service<OutputWriter>()(
         outputDir: string,
         files: ReadonlyArray<GeneratedFile>,
       ) {
-        yield* fs.remove(outputDir, { recursive: true, force: true }).pipe(
+        const failsTo = (operation: OutputDirectoryError["operation"]) =>
           Effect.mapError(
-            (cause) =>
-              new OutputDirectoryError({
-                path: outputDir,
-                operation: "clean",
-                cause,
-              }),
-          ),
-        );
-        yield* fs.makeDirectory(outputDir, { recursive: true }).pipe(
-          Effect.mapError(
-            (cause) =>
-              new OutputDirectoryError({
-                path: outputDir,
-                operation: "create",
-                cause,
-              }),
-          ),
-        );
+            (cause: PlatformError) =>
+              new OutputDirectoryError({ path: outputDir, operation, cause }),
+          );
+
+        yield* fs
+          .remove(outputDir, { recursive: true, force: true })
+          .pipe(failsTo("clean"));
+        yield* fs
+          .makeDirectory(outputDir, { recursive: true })
+          .pipe(failsTo("create"));
 
         return yield* Effect.forEach(files, (file) => {
           const target = path.join(outputDir, file.path);
