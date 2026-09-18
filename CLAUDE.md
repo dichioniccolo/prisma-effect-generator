@@ -10,9 +10,10 @@ Node (see `.nvmrc`) and pnpm. Effect v4 (`effect`, `@effect/platform-node`,
 ## Commands
 
 - Build: `pnpm build` (writes `dist/`; never commit build output).
-- Type check: `pnpm check` (sources, then scripts).
-- Full suite: `pnpm test`. Runs each project under `tests/*/`
-  through `prisma generate`, a strict `tsc` of the generated code
+- Type check: `pnpm check` (sources, then unit tests and scripts).
+- Unit tests: `pnpm test:unit`; target files with `pnpm test:unit <path>`.
+- Full suite: `pnpm test`. Runs the unit tests, then each project under
+  `tests/*/` through `prisma generate`, a strict `tsc` of the generated code
   and its own vitest run. Pick suites with `pnpm test --suite <name>`.
 - Release notes: add a changeset (`pnpm changeset`). The repo is in
   Changesets pre-release mode (`rc`).
@@ -23,12 +24,14 @@ Node (see `.nvmrc`) and pnpm. Effect v4 (`effect`, `@effect/platform-node`,
   Biome.
 - `src/templates.ts`: the pure templating. Strings in, strings out; keep it
   free of Effect.
+- `tests/unit/`: unit tests, with file snapshots of the rendered service.
 - `tests/<suite>/`: integration projects, each with its own lockfile.
 
 ## Invariants
 
-- The generated code is the product. Any change to it must be deliberate;
-  the suites under `tests/*/` type-check it strictly.
+- The generated code is the product. Any change to it must show up in
+  `tests/unit/__snapshots__/` and be deliberate. Never update snapshots just
+  to make a test pass.
 - Prisma speaks JSON-RPC over the generator's stderr and parses every line
   written there. Never write JSON lines to stderr.
 
@@ -82,4 +85,5 @@ version, the types in `node_modules/effect` win.
 ### Verification
 
 - Type check: `pnpm check`.
-- Tests: `pnpm test` before handing work back.
+- Tests: `pnpm test:unit` while iterating, `pnpm test` before handing work
+  back.

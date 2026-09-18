@@ -14,7 +14,8 @@
   "scripts": {
     "build": "tsc && chmod +x dist/index.js",
     "check": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
-    "test": "tsx scripts/runTests.ts",
+    "test": "vitest run && tsx scripts/runTests.ts",
+    "test:unit": "vitest run",
     "prepublishOnly": "pnpm run build",
     "changeset": "changeset",
     "changeset-version": "changeset version",
@@ -39,10 +40,12 @@
     "@changesets/changelog-github": "^1.0.0",
     "@changesets/cli": "^3.0.1",
     "@effect/platform-node": "4.0.0-rc.111",
+    "@effect/vitest": "4.0.0-rc.111",
     "@prisma/client": "^7.9.1",
     "@types/node": "^26.1.2",
     "prisma": "^7.9.1",
     "tsx": "^4.23.11",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
   }
 }
