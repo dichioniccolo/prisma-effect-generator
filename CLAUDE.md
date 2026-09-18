@@ -19,9 +19,10 @@ Node (see `.nvmrc`) and pnpm. Effect v4 (`effect`, `@effect/platform-node`,
 
 ## Layout
 
-- `src/index.ts`: the whole generator. The `generatorHandler`, option
-  parsing, file I/O and Biome come first; the rest is pure string
-  templating.
+- `src/index.ts`: the `generatorHandler`, option parsing, file I/O and
+  Biome.
+- `src/templates.ts`: the pure templating. Strings in, strings out; keep it
+  free of Effect.
 - `tests/<suite>/`: integration projects, each with its own lockfile.
 
 ## Invariants
