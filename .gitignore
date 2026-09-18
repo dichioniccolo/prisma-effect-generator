@@ -10,3 +10,6 @@ tests/import-extension/generated
 tests/import-extension/node_modules
 tests/supports-many-and-return/generated
 tests/supports-many-and-return/node_modules
+
+# Effect reference checkout (scripts/setup-effect-ref.sh)
+.repos/*
