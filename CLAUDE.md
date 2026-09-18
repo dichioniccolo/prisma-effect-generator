@@ -20,8 +20,11 @@ Node (see `.nvmrc`) and pnpm. Effect v4 (`effect`, `@effect/platform-node`,
 
 ## Layout
 
-- `src/index.ts`: the `generatorHandler`, option parsing, file I/O and
-  Biome.
+- `src/index.ts`: the edge. The `generatorHandler`, file I/O and Biome;
+  options come from `src/options.ts`.
+- `src/options.ts`: the `generator` block decoded with `Schema`.
+- `src/errors.ts`: `Schema.TaggedError` failures and their user-facing
+  messages.
 - `src/templates.ts`: the pure templating. Strings in, strings out; keep it
   free of Effect.
 - `tests/unit/`: unit tests, with file snapshots of the rendered service.
