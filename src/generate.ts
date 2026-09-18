@@ -131,4 +131,8 @@ export const generate = Effect.fn("generate")(function* (
   const writer = yield* OutputWriter;
   const written = yield* writer.write(settings.output, files);
   yield* formatFiles(written);
-});
+
+  yield* Effect.logInfo(
+    `generated ${options.dmmf.datamodel.models.length} models into ${settings.output}`,
+  );
+}, Effect.withLogSpan("generate"));
