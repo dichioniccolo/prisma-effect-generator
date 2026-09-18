@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "initiative-manifest/v2",
+  "initiative": {
+    "id": "effect-internals",
+    "title": "Effect inside the generator",
+    "status": "active",
+    "created": "2026-09-18",
+    "updated": "2026-09-18",
+    "packetAnchorDocument": "SPEC.md"
+  },
+  "packetPath": "goals/effect-internals",
+  "lifecycle": "active",
+  "mission": "Run the generator itself on Effect (Schema options, typed errors, services, logs) with byte-identical output, shipped as one PR.",
+  "executionCapable": true,
+  "reflectionRequired": true,
+  "provenance": {
+    "exploration": "explorations/effect-internals",
+    "graduated": "2026-09-18",
+    "explorationDecisions": "explorations/effect-internals/DECISIONS.md"
+  },
+  "completionGate": {
+    "requiresPullRequest": true,
+    "requiresMergeable": true,
+    "statement": "Not achieved until this goal's work ships as a PR driven to mergeable: required checks green and every review thread answered."
+  },
+  "currentSourceOfTruth": [
+    "CLAUDE.md",
+    "goals/effect-internals/README.md",
+    "goals/effect-internals/SPEC.md",
+    "goals/effect-internals/PLAN.md",
+    "goals/effect-internals/GOAL.md",
+    "goals/effect-internals/research/SOURCES.md"
+  ],
+  "researchReports": [
+    "research/SOURCES.md"
+  ],
+  "agentLaunchers": [
+    {
+      "kind": "goal-launcher",
+      "path": "GOAL.md",
+      "targetChars": 3500,
+      "maxChars": 4000,
+      "command": "follow the instructions in goals/effect-internals/GOAL.md"
+    }
+  ],
+  "phases": [
+    {
+      "id": "P0",
+      "name": "Recon",
+      "status": "complete"
+    },
+    {
+      "id": "P1",
+      "name": "Baseline",
+      "status": "pending"
+    },
+    {
+      "id": "P2",
+      "name": "Options",
+      "status": "pending"
+    },
+    {
+      "id": "P3",
+      "name": "Services",
+      "status": "pending"
+    },
+    {
+      "id": "P4",
+      "name": "Logging",
+      "status": "pending"
+    },
+    {
+      "id": "P5",
+      "name": "Verify",
+      "status": "pending"
+    },
+    {
+      "id": "P6",
+      "name": "PR to mergeable",
+      "status": "pending"
+    },
+    {
+      "id": "P7",
+      "name": "Close",
+      "status": "pending"
+    }
+  ],
+  "verificationCommands": [
+    "pnpm build",
+    "pnpm test",
+    "test \"$(wc -m < goals/effect-internals/GOAL.md)\" -le 4000",
+    "jq . goals/effect-internals/ops/manifest.json",
+    "rg -n \"effect-internals|GOAL.md|agentLaunchers|packetAnchorDocument\" goals/effect-internals",
+    "git diff --check -- goals/effect-internals"
+  ],
+  "stopConditions": [
+    "The output differs from the baseline and the cause is not understood.",
+    "A step needs a change to the generated code.",
+    "Required source files are missing or materially contradictory.",
+    "The implementation would exceed named scope.",
+    "Verification requires unnamed credentials, cost, destructive side effects, or policy approval.",
+    "The same blocker repeats after reasonable investigation."
+  ]
+}
