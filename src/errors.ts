@@ -1,15 +1,16 @@
-import { Match, Schema } from "effect";
+import { Formatter, Match, Schema } from "effect";
 import { PlatformError } from "effect/PlatformError";
 
 /** One invalid entry in the `generator` block of schema.prisma. */
-export const OptionProblem = Schema.Struct({
-  option: Schema.String,
-  /** The value exactly as Prisma passed it to the generator. */
-  received: Schema.Unknown,
-  expected: Schema.String,
-});
-
-export type OptionProblem = typeof OptionProblem.Type;
+export class OptionProblem extends Schema.Class<OptionProblem>("OptionProblem")(
+  {
+    option: Schema.String,
+    /** The value exactly as Prisma passed it to the generator. */
+    received: Schema.Unknown,
+    expected: Schema.String,
+  },
+  { description: "An option value the generator rejected, and why." },
+) {}
 
 /** The generator block contains values the generator cannot work with. */
 export class InvalidGeneratorConfig extends Schema.TaggedError<InvalidGeneratorConfig>()(
@@ -18,6 +19,7 @@ export class InvalidGeneratorConfig extends Schema.TaggedError<InvalidGeneratorC
     generator: Schema.String,
     problems: Schema.Array(OptionProblem),
   },
+  { description: "The generator block failed validation." },
 ) {}
 
 /** The output directory could not be cleaned or created. */
@@ -28,6 +30,7 @@ export class OutputDirectoryError extends Schema.TaggedError<OutputDirectoryErro
     operation: Schema.Literals(["clean", "create"]),
     cause: Schema.instanceOf(PlatformError),
   },
+  { description: "The output directory could not be cleaned or created." },
 ) {}
 
 /** A generated file could not be written. */
@@ -37,6 +40,7 @@ export class FileWriteError extends Schema.TaggedError<FileWriteError>()(
     path: Schema.String,
     cause: Schema.instanceOf(PlatformError),
   },
+  { description: "A generated file could not be written." },
 ) {}
 
 /**
@@ -49,6 +53,7 @@ export class FormatError extends Schema.TaggedError<FormatError>()(
     path: Schema.String,
     reason: Schema.String,
   },
+  { description: "Formatting a generated file failed; the file is kept." },
 ) {}
 
 /** Every expected way `prisma generate` can fail because of this generator. */
@@ -67,7 +72,7 @@ export const formatGeneratorError = (error: GeneratorError): string =>
         `Invalid options in generator "${generator}":`,
         // Mirrors the `option = value` syntax of schema.prisma.
         ...problems.flatMap(({ option, received, expected }) => [
-          `  - ${option} = ${JSON.stringify(received)}`,
+          `  - ${option} = ${Formatter.format(received)}`,
           `    ${expected}`,
         ]),
       ].join("\n"),

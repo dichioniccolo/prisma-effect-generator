@@ -38,16 +38,15 @@ export class CodeFormatter extends Context.Service<
                 (cause) =>
                   new FormatError({ path: file, reason: cause.message }),
               ),
-              Effect.flatMap((exitCode) =>
-                exitCode === 0
-                  ? Effect.void
-                  : Effect.fail(
-                      new FormatError({
-                        path: file,
-                        reason: `biome exited with code ${exitCode}`,
-                      }),
-                    ),
+              Effect.filterOrFail(
+                (exitCode) => exitCode === 0,
+                (exitCode) =>
+                  new FormatError({
+                    path: file,
+                    reason: `biome exited with code ${exitCode}`,
+                  }),
               ),
+              Effect.asVoid,
             ),
       };
     }),

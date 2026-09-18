@@ -1,22 +1,20 @@
 import type { GeneratorConfig } from "@prisma/generator-helper";
-import { Effect, Path } from "effect";
+import { Effect, Option, Path, Schema } from "effect";
 import { CodeFormatter } from "./formatter.js";
 import {
   decodeGeneratorSettings,
-  type ErrorImport,
+  ErrorImport,
   type GeneratorSettings,
 } from "./options.js";
-import { type GeneratedFile, OutputWriter } from "./output.js";
-import {
-  type CustomErrorConfig,
-  type Model,
-  renderService,
-} from "./templates.js";
+import { GeneratedFile, OutputWriter } from "./output.js";
+import { type Model, renderService } from "./templates.js";
 
 /**
  * The parts of Prisma's `GeneratorOptions` the generator reads. Prisma's own
  * type satisfies it; tests can build one without a full DMMF.
  */
+// crispen: kept as an interface — Prisma builds and types this object in
+// process; decoding the DMMF through a schema would re-validate trusted data.
 export interface GenerateInput {
   readonly generator: Pick<GeneratorConfig, "name" | "output" | "config">;
   readonly schemaPath: string;
@@ -27,15 +25,16 @@ export interface GenerateInput {
 }
 
 /**
- * Whether the datasource supports createManyAndReturn/updateManyAndReturn.
- * Providers that don't would get operations that fail to type-check.
+ * Datasources that support createManyAndReturn/updateManyAndReturn. Others
+ * would get operations that fail to type-check.
  */
-export const supportsManyAndReturn = (provider: string | undefined): boolean =>
-  provider === "postgresql" ||
-  provider === "postgres" ||
-  provider === "prisma+postgres" ||
-  provider === "cockroachdb" ||
-  provider === "sqlite";
+const ManyAndReturnProvider = Schema.Literals([
+  "postgresql",
+  "postgres",
+  "prisma+postgres",
+  "cockroachdb",
+  "sqlite",
+]);
 
 /**
  * Rewrites a schema-relative error module so it can be imported from the
@@ -44,44 +43,39 @@ export const supportsManyAndReturn = (provider: string | undefined): boolean =>
  */
 export const resolveErrorImport = (
   path: Path.Path,
-  { module, exportName }: ErrorImport,
-  {
-    schemaDir,
-    outputDir,
-    importFileExtension,
-  }: {
-    readonly schemaDir: string;
-    readonly outputDir: string;
-    readonly importFileExtension: string;
-  },
-): NonNullable<CustomErrorConfig> => {
-  if (!module.startsWith(".")) return { path: module, className: exportName };
+  schemaDir: string,
+  { errorImportPath, output, importFileExtension }: GeneratorSettings,
+): Option.Option<ErrorImport> =>
+  Option.map(errorImportPath, ({ module, exportName }) => {
+    if (!module.startsWith(".")) return new ErrorImport({ module, exportName });
 
-  const relative = path.relative(outputDir, path.resolve(schemaDir, module));
-  const normalized = relative.startsWith(".") ? relative : `./${relative}`;
-  const withExtension =
-    importFileExtension && !path.extname(normalized)
-      ? `${normalized}.${importFileExtension}`
-      : normalized;
-  return { path: withExtension, className: exportName };
-};
+    const relative = path.relative(output, path.resolve(schemaDir, module));
+    const normalized = relative.startsWith(".") ? relative : `./${relative}`;
+    return new ErrorImport({
+      module:
+        importFileExtension && !path.extname(normalized)
+          ? `${normalized}.${importFileExtension}`
+          : normalized,
+      exportName,
+    });
+  });
 
 /** Everything the generator emits for a schema. Pure. */
 export const renderFiles = (
   models: ReadonlyArray<Model>,
   settings: GeneratorSettings,
-  customError: CustomErrorConfig,
+  customError: Option.Option<ErrorImport>,
   provider: string | undefined,
 ): ReadonlyArray<GeneratedFile> => [
-  {
+  new GeneratedFile({
     path: "index.ts",
     content: renderService(models, {
       clientImportPath: settings.clientImportPath,
       customError,
       enableTelemetry: settings.enableTelemetry,
-      supportsManyAndReturn: supportsManyAndReturn(provider),
+      supportsManyAndReturn: Schema.is(ManyAndReturnProvider)(provider),
     }),
-  },
+  }),
 ];
 
 /** Formats each file, downgrading failures to warnings as before. */
@@ -112,19 +106,10 @@ export const generate = Effect.fn("generate")(function* (
   const path = yield* Path.Path;
   const settings = yield* decodeGeneratorSettings(options.generator);
 
-  const customError =
-    settings.errorImportPath === undefined
-      ? null
-      : resolveErrorImport(path, settings.errorImportPath, {
-          schemaDir: path.dirname(options.schemaPath),
-          outputDir: settings.output,
-          importFileExtension: settings.importFileExtension,
-        });
-
   const files = renderFiles(
     options.dmmf.datamodel.models,
     settings,
-    customError,
+    resolveErrorImport(path, path.dirname(options.schemaPath), settings),
     options.datasources?.[0]?.provider,
   );
 
