@@ -2,7 +2,7 @@
 
 ## Status
 
-Lifecycle: `active`
+Lifecycle: `completed-retained`
 
 Source: [`ops/manifest.json`](./ops/manifest.json)
 
@@ -32,13 +32,18 @@ follow the instructions in goals/effect-internals/GOAL.md
 
 ## Current Phase
 
-P1 Baseline: capture the output hashes, then move the templating into a pure
-module and snapshot it.
+Closed. Every phase is complete; the PR stays open until the author decides
+to merge.
 
 ## Latest Evidence
 
-P0 recon on 2026-09-18: `pnpm test` green on `main` (5 suites, 145 tests).
-See `explorations/effect-internals/RESEARCH.md`.
+- PR from `refactor/effect-internals` into `main`: `mergeStateStatus`
+  `CLEAN`, CI `test` green, no review threads.
+- Invariance: 20 captured outputs (5 suites and 5 extra configs, raw and
+  formatted) byte-identical after every commit.
+- Tests: 17 unit tests and 145 integration tests green on Effect rc.115.
+- Closeout reflection:
+  [`history/reflections/2026-09-18-claude.md`](./history/reflections/2026-09-18-claude.md).
 
 ## Notes
 

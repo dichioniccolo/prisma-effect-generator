@@ -3,13 +3,13 @@
   "initiative": {
     "id": "effect-internals",
     "title": "Effect inside the generator",
-    "status": "active",
+    "status": "completed-retained",
     "created": "2026-09-18",
     "updated": "2026-09-18",
     "packetAnchorDocument": "SPEC.md"
   },
   "packetPath": "goals/effect-internals",
-  "lifecycle": "active",
+  "lifecycle": "completed-retained",
   "mission": "Run the generator itself on Effect (Schema options, typed errors, services, logs) with byte-identical output, shipped as one PR.",
   "executionCapable": true,
   "reflectionRequired": true,
@@ -52,37 +52,37 @@
     {
       "id": "P1",
       "name": "Baseline",
-      "status": "pending"
+      "status": "complete"
     },
     {
       "id": "P2",
       "name": "Options",
-      "status": "pending"
+      "status": "complete"
     },
     {
       "id": "P3",
       "name": "Services",
-      "status": "pending"
+      "status": "complete"
     },
     {
       "id": "P4",
       "name": "Logging",
-      "status": "pending"
+      "status": "complete"
     },
     {
       "id": "P5",
       "name": "Verify",
-      "status": "pending"
+      "status": "complete"
     },
     {
       "id": "P6",
       "name": "PR to mergeable",
-      "status": "pending"
+      "status": "complete"
     },
     {
       "id": "P7",
       "name": "Close",
-      "status": "pending"
+      "status": "complete"
     }
   ],
   "verificationCommands": [
