@@ -1,0 +1,2 @@
+# Snapshots of the rendered service, pinned by tests/unit/templates.test.ts.
+tests/unit/__snapshots__/** linguist-generated=true
