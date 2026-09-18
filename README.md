@@ -50,6 +50,9 @@ Then run `prisma generate` to generate the client and the Effect service.
 | `clientImportPath` | Import path for Prisma Client (relative to output) | `@prisma/client` |
 | `errorImportPath` | Custom error module path (relative to schema.prisma), e.g. `./errors#MyError` | - |
 | `importFileExtension` | File extension for relative imports (`js`, `ts`, or empty) | `""` |
+| `enableTelemetry` | Wrap operations in `Effect.fn` spans (`"true"` or `"false"`) | `"false"` |
+
+Options are validated when `prisma generate` runs. An invalid value stops generation before anything is written, with a message naming each offending option, the value received and what was expected.
 
 ### ESM / Import Extensions
 
