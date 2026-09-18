@@ -9,7 +9,7 @@ Node (see `.nvmrc`) and pnpm. Effect v4 (`effect`, `@effect/platform-node`,
 
 ## Commands
 
-- Build: `pnpm build` (writes `dist/`; never commit build output).
+- Build: `pnpm build` (writes `dist/`, which is not tracked).
 - Type check: `pnpm check` (sources, then unit tests and scripts).
 - Unit tests: `pnpm test:unit`; target files with `pnpm test:unit <path>`.
 - Full suite: `pnpm test`. Runs the unit tests, then each project under
