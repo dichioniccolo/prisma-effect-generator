@@ -20,14 +20,19 @@ Node (see `.nvmrc`) and pnpm. Effect v4 (`effect`, `@effect/platform-node`,
 
 ## Layout
 
-- `src/index.ts`: the edge. The `generatorHandler`, file I/O and Biome;
-  options come from `src/options.ts`.
+- `src/index.ts`: the edge. The only file that knows about
+  `generatorHandler` and Node. It provides the live layers, runs the Effect
+  and turns expected failures into the message Prisma prints.
+- `src/generate.ts`: orchestration of one `prisma generate`.
 - `src/options.ts`: the `generator` block decoded with `Schema`.
 - `src/errors.ts`: `Schema.TaggedError` failures and their user-facing
   messages.
+- `src/output.ts`, `src/formatter.ts`: `OutputWriter` and `CodeFormatter`
+  services (disk and Biome).
 - `src/templates.ts`: the pure templating. Strings in, strings out; keep it
   free of Effect.
-- `tests/unit/`: unit tests, with file snapshots of the rendered service.
+- `tests/unit/`: unit tests, with an in-memory `FileSystem` and file
+  snapshots of the rendered service.
 - `tests/<suite>/`: integration projects, each with its own lockfile.
 
 ## Invariants
@@ -36,7 +41,10 @@ Node (see `.nvmrc`) and pnpm. Effect v4 (`effect`, `@effect/platform-node`,
   `tests/unit/__snapshots__/` and be deliberate. Never update snapshots just
   to make a test pass.
 - Prisma speaks JSON-RPC over the generator's stderr and parses every line
-  written there. Never write JSON lines to stderr.
+  written there. Logs stay plain logfmt on stderr, never JSON.
+- Nothing in `src/` imports `node:*`. Code reaches the platform through
+  `FileSystem`, `Path` and `ChildProcessSpawner`; only `src/index.ts`
+  provides the Node layers.
 
 ## Effect Agent Setup
 
