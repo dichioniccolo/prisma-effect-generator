@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "exploration-manifest/v1",
+  "exploration": {
+    "slug": "effect-internals",
+    "title": "Effect inside the generator",
+    "status": "graduated",
+    "stage": "graduate",
+    "openQuestions": [],
+    "sources": ["research/SOURCES.md"],
+    "links": {
+      "goals": ["goals/effect-internals"],
+      "docs": [],
+      "supersededBy": null
+    },
+    "created": "2026-09-18",
+    "updated": "2026-09-18"
+  }
+}
