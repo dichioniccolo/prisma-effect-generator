@@ -1,4 +1,5 @@
 import { Match, Schema } from "effect";
+import { PlatformError } from "effect/PlatformError";
 
 /** One invalid entry in the `generator` block of schema.prisma. */
 export const OptionProblem = Schema.Struct({
@@ -19,8 +20,40 @@ export class InvalidGeneratorConfig extends Schema.TaggedError<InvalidGeneratorC
   },
 ) {}
 
+/** The output directory could not be cleaned or created. */
+export class OutputDirectoryError extends Schema.TaggedError<OutputDirectoryError>()(
+  "OutputDirectoryError",
+  {
+    path: Schema.String,
+    operation: Schema.Literals(["clean", "create"]),
+    cause: Schema.instanceOf(PlatformError),
+  },
+) {}
+
+/** A generated file could not be written. */
+export class FileWriteError extends Schema.TaggedError<FileWriteError>()(
+  "FileWriteError",
+  {
+    path: Schema.String,
+    cause: Schema.instanceOf(PlatformError),
+  },
+) {}
+
+/**
+ * The generated code could not be formatted. Never fatal: the generator
+ * leaves the file unformatted and logs a warning.
+ */
+export class FormatError extends Schema.TaggedError<FormatError>()(
+  "FormatError",
+  {
+    path: Schema.String,
+    reason: Schema.String,
+  },
+) {}
+
 /** Every expected way `prisma generate` can fail because of this generator. */
-export type GeneratorError = InvalidGeneratorConfig;
+export type GeneratorError =
+  InvalidGeneratorConfig | OutputDirectoryError | FileWriteError;
 
 /**
  * Renders an expected failure as the message `prisma generate` shows the
@@ -38,4 +71,8 @@ export const formatGeneratorError = (error: GeneratorError): string =>
           `    ${expected}`,
         ]),
       ].join("\n"),
+    OutputDirectoryError: ({ path, operation, cause }) =>
+      `Could not ${operation} the output directory ${path}: ${cause.message}`,
+    FileWriteError: ({ path, cause }) =>
+      `Could not write ${path}: ${cause.message}`,
   });
