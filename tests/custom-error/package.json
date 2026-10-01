@@ -7,10 +7,10 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@effect/vitest": "4.0.0-rc.115",
+    "@effect/vitest": "4.0.0",
     "@libsql/client": "^0.17.4",
     "@prisma/adapter-libsql": "^7.9.1",
-    "effect": "4.0.0-rc.115",
+    "effect": "4.0.0",
     "prisma": "^7.9.1",
     "typescript": "^7.0.2",
     "vitest": "^5.0.1"

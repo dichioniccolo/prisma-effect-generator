@@ -9,8 +9,8 @@ import {
   Result,
   Stream,
 } from "effect";
-import { Command, Flag } from "effect/unstable/cli";
-import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process";
+import { Command, Flag } from "effect/cli";
+import { ChildProcess, ChildProcessSpawner } from "effect/process";
 import { availableParallelism } from "node:os";
 
 class CommandError extends Data.TaggedError("CommandError")<{

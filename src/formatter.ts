@@ -1,5 +1,5 @@
 import { Context, Effect, Layer } from "effect";
-import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process";
+import { ChildProcess, ChildProcessSpawner } from "effect/process";
 import { FormatError } from "./errors.js";
 
 /** Formats a generated file in place. */

@@ -171,7 +171,7 @@ describe("PlannedFile", () => {
 ```
 
 Derive generators from the production
-schema (or `Arbitrary.schema(schema)` from `effect/unstable/arbitrary`) instead
+schema (or `Arbitrary.schema(schema)` from `effect/Arbitrary`) instead
 of writing weaker test-only schemas.
 
 ## Quick Selection Map

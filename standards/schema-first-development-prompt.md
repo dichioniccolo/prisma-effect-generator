@@ -219,7 +219,7 @@ complete. Report the exact commands and outcomes.
 ### Derive behavior instead of duplicating truth
 
 - Derive guards with `S.is`, comparisons with `S.toEquivalence`, generators
-  with `Arbitrary.schema` (`effect/unstable/arbitrary`), and codecs with
+  with `Arbitrary.schema` (`effect/Arbitrary`), and codecs with
   Schema APIs.
 - Prefer tagged-union `.cases`, `.guards`, `.isAnyOf`, and `.match` over
   handwritten constructors, guards, and branch chains.

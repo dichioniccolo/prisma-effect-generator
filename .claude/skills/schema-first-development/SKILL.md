@@ -108,7 +108,7 @@ Keep `Schema` as the source of truth for pure data models.
 - If you need a custom reusable check, include `identifier`, `title`, and
   `description`.
 - Use `S.is(schema)` for guards, `S.toEquivalence(schema)` for comparisons, and
-  `Arbitrary.schema(schema)` from `effect/unstable/arbitrary` for schema-modeled
+  `Arbitrary.schema(schema)` from `effect/Arbitrary` for schema-modeled
   property tests.
 - Use `S.fromJsonString(S.Unknown)` or `S.fromJsonString(schema)` for JSON string
   boundaries.
