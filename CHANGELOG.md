@@ -1,5 +1,27 @@
 # prisma-generator-effect
 
+## 2.0.0
+
+### Patch Changes
+
+- [#28](https://github.com/dichioniccolo/prisma-effect-generator/pull/28) [`ce8cc8e`](https://github.com/dichioniccolo/prisma-effect-generator/commit/ce8cc8e56a0aaa8ef423f229d0a2d1b22b9b58a7) Thanks [@dichioniccolo](https://github.com/dichioniccolo)! - Upgrade `effect` and `@effect/platform-node` to the stable `4.0.0` release. The generated code is unchanged; projects using it need `effect` `4.0.0` or later.
+
+- [#27](https://github.com/dichioniccolo/prisma-effect-generator/pull/27) [`af4651a`](https://github.com/dichioniccolo/prisma-effect-generator/commit/af4651a68c8b4f5be100399a432fad9be8a3ba14) Thanks [@dichioniccolo](https://github.com/dichioniccolo)! - Run the generator itself on Effect. The generated code is unchanged; what changes is how it is produced.
+  
+  - Generator options are decoded with `Schema`. Invalid values now fail before anything is written, with one message listing every offending option, the value received and what was expected. Values that previously produced broken code or were silently ignored are now rejected: an empty `clientImportPath`, an `importFileExtension` with a leading dot, an `errorImportPath` with more than one `#` or an export name that is not an identifier, and an `enableTelemetry` other than `"true"`/`"false"`.
+  - File system access, path handling and Biome formatting sit behind services provided at the entry point, so the generator can be tested without touching the disk.
+  - Debug logs are written to stderr as logfmt and shown by `DEBUG=prisma:GeneratorProcess prisma generate`.
+  
+  `@effect/platform-node` is a runtime dependency again: the generator now imports it to run on Node.
+
+- [#27](https://github.com/dichioniccolo/prisma-effect-generator/pull/27) [`270ab05`](https://github.com/dichioniccolo/prisma-effect-generator/commit/270ab05f6c040b29cb304806637906949efb78ef) Thanks [@dichioniccolo](https://github.com/dichioniccolo)! - Upgrade `effect` and `@effect/platform-node` to `4.0.0-rc.115`. The generated code is unchanged.
+
+- [`6d56bc5`](https://github.com/dichioniccolo/prisma-effect-generator/commit/6d56bc56d9c27f225a93658ea615333e913c07ac) Thanks [@dichioniccolo](https://github.com/dichioniccolo)! - Upgrade to Effect v4 RC (`effect`, `@effect/platform-node`, `@effect/vitest` at `4.0.0-rc.111`) and switch release tooling from release-please to Changesets.
+
+- [`c30b277`](https://github.com/dichioniccolo/prisma-effect-generator/commit/c30b277def02777fe48f3488636909150b8c91c6) Thanks [@dichioniccolo](https://github.com/dichioniccolo)! - Fix dependency classification. `vitest`, `@effect/vitest` and `@effect/platform-node` were declared as runtime dependencies but are not imported anywhere in the generator, and `typescript` is only needed to build it. Installing this package therefore pulled a full test runner and compiler — along with `vite`, `postcss`, `nanoid` and `esbuild`, and every advisory open against them — into consumers' dependency trees. They are now dev-only, and production dependencies audit clean.
+  
+  `effect` moves the other way: the generator imports it and so does the code it emits, but it was only a devDependency, so it was never actually declared as required.
+
 ## 2.0.0-rc.2
 
 ### Patch Changes
