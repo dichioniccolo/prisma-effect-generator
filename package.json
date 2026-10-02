@@ -33,14 +33,14 @@
   "author": "Niccolo' Di Chio",
   "license": "MIT",
   "dependencies": {
-    "@effect/platform-node": "4.0.0-rc.115",
+    "@effect/platform-node": "4.0.0",
     "@prisma/generator-helper": "^7.9.1",
-    "effect": "4.0.0-rc.115"
+    "effect": "4.0.0"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^1.0.0",
     "@changesets/cli": "^3.0.1",
-    "@effect/vitest": "4.0.0-rc.115",
+    "@effect/vitest": "4.0.0",
     "@prisma/client": "^7.9.1",
     "@types/node": "^26.1.2",
     "prisma": "^7.9.1",

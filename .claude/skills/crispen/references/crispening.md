@@ -96,7 +96,7 @@ Never pass an identifier equal to the tag.
 | `Effect.fn("Name")(function* …)` / `Effect.fnUntraced(...)` | production (traced) / tests + hot paths (untraced); never `(a) => Effect.gen(...)`. |
 | `dual(2, impl)` | public 2–3-arg helpers get data-first + data-last forms. |
 | `flow(...)` | passthrough `pipe` callbacks; direct helper refs over trivial lambdas. |
-| `Arbitrary.schema(Schema)` (`effect/unstable/arbitrary`) + `@effect/vitest` | derive test data from the schema; delete hand fixtures. |
+| `Arbitrary.schema(Schema)` (`effect/Arbitrary`) + `@effect/vitest` | derive test data from the schema; delete hand fixtures. |
 
 ---
 

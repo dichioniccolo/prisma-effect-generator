@@ -27,7 +27,7 @@ Confirm before touching anything:
 1. Prisma 7 or later, using the `prisma-client` generator provider. The legacy
    `prisma-client-js` provider emits a different client shape and is not
    supported.
-2. `effect` v4 (`4.0.0-rc.111` or later) in `dependencies`. The generated code
+2. `effect` v4 (`4.0.0` or later) in `dependencies`. The generated code
    uses `Context.Service`, which does not exist in Effect v3.
 3. TypeScript with `strict: true`. The generated types assume it.
 

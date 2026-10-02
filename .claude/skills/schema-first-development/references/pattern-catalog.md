@@ -123,7 +123,7 @@ Use:
 
 - `S.is(schema)` for guards
 - `S.toEquivalence(schema)` for comparisons
-- `Arbitrary.schema(schema)` (`effect/unstable/arbitrary`) for schema-modeled property tests
+- `Arbitrary.schema(schema)` (`effect/Arbitrary`) for schema-modeled property tests
 - schema tagged-union `.cases`, `.guards`, `.isAnyOf`, and `.match`
 - `S.Literals([...])` members: `.literals`, `.pick([...])`, `.mapMembers(...)`,
   plus `S.is(literals)` for guards

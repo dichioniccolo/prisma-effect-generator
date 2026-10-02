@@ -88,7 +88,7 @@ Additional checks with no law counterpart below:
 47. Before keeping `O.match(...)`, check whether `O.map(...)`, `O.flatMap(...)`, `O.liftPredicate(...)`, and `O.getOrElse(...)` express the same control flow more flatly. Avoid `onNone: () => ({})` object compaction; use `O.map(...)` plus `O.getOrElse(() => ({}))`, `R.getSomes({...})`, or `S.OptionFrom*` according to boundary semantics.
 48. In callback-only contexts where `yield*` is unavailable (for example `SchemaTransformation.transform*`), consume services with `Context.Service.use(...)`.
 49. Do not import `node:path` in production/tooling source. Use `Path.Path` service (`yield* Path.Path`) for `join`, `resolve`, `relative`, `basename`, etc.
-50. Do not use native `fetch` in production/tooling source. Use `HttpClient` from `effect/unstable/http` and provide platform client layers (Node: `NodeHttpClient.layer`).
+50. Do not use native `fetch` in production/tooling source. Use `HttpClient` from `effect/http` and provide platform client layers (Node: `NodeHttpClient.layer`).
 51. Named or reused domain constraints must be modeled as schemas first; prefer built-in schema constructors/checks before `S.makeFilter`, then derive guards with `S.is(...)`.
 52. Reusable `S.makeFilter`, `S.makeFilterGroup`, and reusable built-in check blocks must include `identifier`, `title`, and `description`; `message` stays user-facing.
 53. Model internal literal domains as one named `S.Literals([...])` schema; derive guards with `S.is(...)`, subsets with `.pick([...])`, and branch with `Match`.

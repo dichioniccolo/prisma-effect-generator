@@ -158,7 +158,7 @@ Use:
 
 - `S.is(schema)`
 - `S.toEquivalence(schema)`
-- `Arbitrary.schema(schema)` (`effect/unstable/arbitrary`) for schema-modeled laws and boundary invariants
+- `Arbitrary.schema(schema)` (`effect/Arbitrary`) for schema-modeled laws and boundary invariants
 - `S.TaggedUnion(...).cases` / `.guards` / `.isAnyOf` / `.match`
 - `S.toTaggedUnion(...).cases` / `.guards` / `.isAnyOf` / `.match`
 - `S.Literals([...])` members: `.literals`, `.pick([...])`, `.mapMembers(...)`,
@@ -211,7 +211,7 @@ S.makeFilter(Str.includes("/"), {
 Property tests should import production schemas and derive data from them.
 Do not define weaker test-only schemas to make arbitrary generation easier.
 
-When `Arbitrary.schema(schema)` (`effect/unstable/arbitrary`) exposes values that break a claimed invariant,
+When `Arbitrary.schema(schema)` (`effect/Arbitrary`) exposes values that break a claimed invariant,
 fix or annotate the source schema unless the invariant was overstated.
 
 Broad primitives in exported/domain/boundary schemas need a deliberate reason:
