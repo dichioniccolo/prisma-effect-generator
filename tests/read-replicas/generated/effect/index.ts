@@ -1321,16 +1321,8 @@ const $begin = (
 	},
 ): EffectType<FlatTransactionClient, PrismaError> =>
 	Effect.callback<FlatTransactionClient, PrismaError>((resume) => {
-		let setTxClient: (txClient: PrismaNamespace.TransactionClient) => void;
 		let commit: () => void;
 		let rollback: () => void;
-
-		// Promise that resolves when we get the transaction client
-		const txClientPromise = new Promise<PrismaNamespace.TransactionClient>(
-			(res) => {
-				setTxClient = res;
-			},
-		);
 
 		// Promise that controls when the transaction commits/rolls back
 		const txPromise = new Promise<void>((_res, _rej) => {
@@ -1338,21 +1330,10 @@ const $begin = (
 			rollback = () => _rej(ROLLBACK);
 		});
 
-		// Start the transaction - Prisma will wait on txPromise before committing
+		// Start the transaction - Prisma will wait on txPromise before committing.
+		// Once we have the transaction client, wrap it with commit/rollback methods.
 		const tx = client
-			.$transaction((txClient) => {
-				setTxClient(txClient);
-				return txPromise;
-			}, options)
-			.catch((e) => {
-				// Swallow intentional rollbacks, rethrow actual errors
-				if (e === ROLLBACK) return;
-				throw e;
-			});
-
-		// Once we have the transaction client, wrap it with commit/rollback methods
-		txClientPromise
-			.then((innerTx) => {
+			.$transaction((innerTx) => {
 				const proxy = new Proxy(innerTx, {
 					get(target, prop) {
 						if (prop === "$commit")
@@ -1369,10 +1350,27 @@ const $begin = (
 					},
 				}) as FlatTransactionClient;
 				resume(Effect.succeed(proxy));
-			})
-			.catch((error) => {
-				resume(Effect.fail(mapError(error, "$transaction", "Prisma")));
+				return txPromise;
+			}, options)
+			.catch((e) => {
+				// Swallow intentional rollbacks, rethrow actual errors
+				if (e === ROLLBACK) return;
+				throw e;
 			});
+
+		// Opening the transaction can fail before Prisma calls back (e.g. the
+		// database is down): fail the effect. Later rejections reach the caller
+		// through $commit/$rollback, and resume ignores calls after the first.
+		// Handling tx here also keeps it from becoming an unhandled rejection;
+		// mapError runs inside the effect so an unmapped error becomes a defect
+		// instead of throwing out of this handler.
+		tx.catch((error) => {
+			resume(
+				Effect.suspend(() =>
+					Effect.fail(mapError(error, "$transaction", "Prisma")),
+				),
+			);
+		});
 	});
 
 /**
