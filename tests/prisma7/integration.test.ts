@@ -1,13 +1,17 @@
 import { describe, expect, expectTypeOf, it } from "@effect/vitest";
-import { Data, Effect, pipe } from "effect";
+import { Data, Effect, Exit, Layer, pipe } from "effect";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
 import {
   Prisma,
+  PrismaClient,
   PrismaUniqueConstraintError,
   PrismaRecordNotFoundError,
   PrismaForeignKeyConstraintError,
 } from "./generated/effect/index.js";
-import { Prisma as PrismaNamespace } from "./generated/client/client.js";
+import {
+  PrismaClient as BasePrismaClient,
+  Prisma as PrismaNamespace,
+} from "./generated/client/client.js";
 
 // Create libSQL adapter for Prisma 7 - new API takes url directly
 const adapter = new PrismaLibSql({ url: "file:./dev.db" });
@@ -2179,6 +2183,53 @@ describe("Prisma 7 Effect Generator", () => {
         yield* prisma.user.delete({ where: { id: result.id } });
       }).pipe(Effect.provide(MainLayer)),
     );
+
+    // Prisma rejects $transaction without calling back when it cannot open
+    // the transaction (e.g. the database is down). This used to hang the
+    // effect and crash Node with an unhandled rejection.
+    describe("when the transaction cannot be opened", () => {
+      const unreachable = new Error("Can't reach database server");
+      const failingClient = (error: unknown) =>
+        Prisma.Default.pipe(
+          Layer.provide(
+            Layer.succeed(PrismaClient, {
+              $transaction: () => Promise.reject(error),
+            } as unknown as BasePrismaClient),
+          ),
+        );
+
+      it.effect("fails with the mapped error", () =>
+        Effect.gen(function* () {
+          const prisma = yield* Prisma;
+          const error = yield* Effect.flip(
+            prisma.$transaction(Effect.succeed("unreachable")),
+          );
+
+          expect(error._tag).toBe("PrismaConnectionError");
+          expect(error.operation).toBe("$transaction");
+        }).pipe(
+          Effect.provide(
+            failingClient(
+              new PrismaNamespace.PrismaClientKnownRequestError(
+                "Timed out fetching a new connection from the connection pool.",
+                { code: "P2024", clientVersion: "7" },
+              ),
+            ),
+          ),
+        ),
+      );
+
+      it.effect("dies with an error it cannot map", () =>
+        Effect.gen(function* () {
+          const prisma = yield* Prisma;
+          const exit = yield* Effect.exit(
+            prisma.$transaction(Effect.succeed("unreachable")),
+          );
+
+          expect(exit).toStrictEqual(Exit.die(unreachable));
+        }).pipe(Effect.provide(failingClient(unreachable))),
+      );
+    });
   });
 
   // ============================================
