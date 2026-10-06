@@ -187,6 +187,32 @@ Effect.runPromise(program.pipe(Effect.provide(Prisma.Live)));
 
 The generated `Prisma` service mirrors your Prisma Client API but returns `Effect<Success, PrismaError, Requirements>` instead of Promises.
 
+### Argument checking
+
+Model operations check their arguments with `Prisma.Exact`, the same type Prisma uses for client extension methods. An unknown key fails to compile at any depth, so a typo in `where`, `data`, `select` or nested `include` args is caught by `tsc` instead of by Prisma at runtime. Passing `select` together with `include` or `omit` is also a compile error.
+
+One consequence: a generic parameter can't be forwarded as is, because TypeScript can't check an unresolved type against `Exact`. Give the wrapper a concrete args type instead.
+
+```typescript
+import type { Prisma as PrismaTypes } from "./generated/client/client";
+import { Prisma } from "./generated/effect";
+import { Effect } from "effect";
+
+// Does not compile: `A` is unresolved inside the function
+const findUsers = <A extends PrismaTypes.UserFindManyArgs>(args: A) =>
+  Effect.gen(function* () {
+    const prisma = yield* Prisma;
+    return yield* prisma.user.findMany(args);
+  });
+
+// Compiles
+const findUsers = (args: PrismaTypes.UserFindManyArgs) =>
+  Effect.gen(function* () {
+    const prisma = yield* Prisma;
+    return yield* prisma.user.findMany(args);
+  });
+```
+
 ### Layer Constructors
 
 | API | Description |

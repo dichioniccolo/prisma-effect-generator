@@ -616,6 +616,7 @@ describe("Type-level tests", () => {
           where: { id: 1 },
           select: {
             id: true,
+            // @ts-expect-error - 'invalid' is not a valid field
             invalid: true,
           },
         });
@@ -670,9 +671,117 @@ describe("Type-level tests", () => {
         prisma.user.create({
           data: {
             email: "test@example.com",
+            // @ts-expect-error - 'comments' is not a relation of User
             comments: { create: { text: "Invalid" } },
           },
         });
+      };
+    });
+
+    it("should error on unknown top-level key next to valid ones (type-only)", () => {
+      const _typeCheck = (prisma: Prisma) => {
+        prisma.user.findMany({
+          where: { id: 1 },
+          // @ts-expect-error - 'invalid' is not a findMany arg
+          invalid: true,
+        });
+      };
+    });
+
+    it("should error on unknown where key next to valid ones (type-only)", () => {
+      const _typeCheck = (prisma: Prisma) => {
+        prisma.user.findMany({
+          where: {
+            id: 1,
+            // @ts-expect-error - 'invalid' is not a valid field
+            invalid: "value",
+          },
+        });
+        prisma.user.count({
+          where: {
+            id: 1,
+            // @ts-expect-error - 'invalid' is not a valid field
+            invalid: "value",
+          },
+        });
+      };
+    });
+
+    it("should error on unknown data key in create, update and upsert (type-only)", () => {
+      const _typeCheck = (prisma: Prisma) => {
+        prisma.user.create({
+          data: {
+            email: "test@example.com",
+            // @ts-expect-error - 'invalid' is not a valid field
+            invalid: "value",
+          },
+        });
+        prisma.user.update({
+          where: { id: 1 },
+          data: {
+            name: "Name",
+            // @ts-expect-error - 'invalid' is not a valid field
+            invalid: "value",
+          },
+        });
+        prisma.user.upsert({
+          where: { id: 1 },
+          create: {
+            email: "test@example.com",
+            // @ts-expect-error - 'invalid' is not a valid field
+            invalid: "value",
+          },
+          update: {},
+        });
+      };
+    });
+
+    it("should error on unknown key inside nested include args (type-only)", () => {
+      const _typeCheck = (prisma: Prisma) => {
+        prisma.user.findMany({
+          include: {
+            posts: {
+              where: {
+                title: "Title",
+                // @ts-expect-error - 'invalid' is not a valid field
+                invalid: "value",
+              },
+            },
+          },
+        });
+      };
+    });
+
+    it("should error on unknown aggregate key (type-only)", () => {
+      const _typeCheck = (prisma: Prisma) => {
+        prisma.user.aggregate({
+          _count: true,
+          // @ts-expect-error - 'invalid' is not an aggregate arg
+          invalid: true,
+        });
+      };
+    });
+
+    it("should error on select combined with include or omit (type-only)", () => {
+      const _typeCheck = (prisma: Prisma) => {
+        // @ts-expect-error - Prisma rejects select and include together
+        prisma.user.findMany({ select: { id: true }, include: { posts: true } });
+        // @ts-expect-error - Prisma rejects select and omit together
+        prisma.user.findMany({ select: { id: true }, omit: { name: true } });
+      };
+    });
+
+    it("still accepts include or omit on their own (type-only)", () => {
+      const _typeCheck = (prisma: Prisma) => {
+        const withInclude = prisma.user.findMany({ include: { posts: true } });
+        type IncludeResult = Effect.Success<typeof withInclude>;
+        expectTypeOf(null as unknown as IncludeResult[number]["posts"]).toBeArray();
+
+        const withOmit = prisma.user.findMany({ omit: { name: true } });
+        type OmitResult = Effect.Success<typeof withOmit>;
+        expectTypeOf(null as unknown as OmitResult).toEqualTypeOf<
+          Array<{ id: number; email: string }>
+        >();
       };
     });
   });
