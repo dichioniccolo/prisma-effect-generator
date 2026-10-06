@@ -1,5 +1,17 @@
 # prisma-generator-effect
 
+## 2.1.0
+
+### Minor Changes
+
+- [#32](https://github.com/dichioniccolo/prisma-effect-generator/pull/32) [`8b63eff`](https://github.com/dichioniccolo/prisma-effect-generator/commit/8b63effce782bc7c4506c7d242ce2de6b1424bfb) Thanks [@dichioniccolo](https://github.com/dichioniccolo)! - Reject unknown keys in model operation arguments at compile time. The generated service typed each argument as a bare `A extends Args`, so a key Prisma doesn't accept (`where: { id: 1, typo: 1 }`, an extra field in `data`, a missing relation in `select`) compiled and then failed at runtime with a Prisma validation error. Arguments now go through `Prisma.Exact` at every depth, and `select` combined with `include` or `omit` is a compile error.
+  
+  Code that forwards a generic `<A extends Prisma.UserFindManyArgs>(args: A)` into the service no longer compiles. Type the wrapper's parameter as `Prisma.UserFindManyArgs` instead. See "Argument checking" in the README.
+
+### Patch Changes
+
+- [#30](https://github.com/dichioniccolo/prisma-effect-generator/pull/30) [`abae47c`](https://github.com/dichioniccolo/prisma-effect-generator/commit/abae47c4193c2caee559e828a8fa3b35819f66ef) Thanks [@dichioniccolo](https://github.com/dichioniccolo)! - Fail `$transaction` with a typed error when the transaction cannot be opened (for example, when the database is down). The generated client used to leave the effect hanging and crash Node with an unhandled promise rejection. Errors the mapper does not recognize become defects, like other operations.
+
 ## 2.0.0
 
 ### Patch Changes
