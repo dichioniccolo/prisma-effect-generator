@@ -18,6 +18,17 @@ function isPrismaClientKnownRequestError(error: unknown): error is PrismaNamespa
 // These are computed once and reused, reducing TypeScript's type-checking workload
 // ============================================================================
 
+/**
+ * Operation args restricted to the keys Prisma accepts, at every depth.
+ * Mirrors the signature Prisma uses for client extension methods.
+ */
+type ExactArgs<A, W> = PrismaNamespace.Exact<A, W> &
+  (A extends { select: any; include: any }
+    ? "Please either choose `select` or `include`."
+    : A extends { select: any; omit: any }
+      ? "Please either choose `select` or `omit`."
+      : unknown)
+
 type UserFindUniqueArgs = PrismaNamespace.Args<BasePrismaClient['user'], 'findUnique'>
 type UserFindUniqueOrThrowArgs = PrismaNamespace.Args<BasePrismaClient['user'], 'findUniqueOrThrow'>
 type UserFindFirstArgs = PrismaNamespace.Args<BasePrismaClient['user'], 'findFirst'>
@@ -711,141 +722,141 @@ export interface IPrismaService {
   // Model operations
   user: {
     findUnique: <A extends UserFindUniqueArgs>(
-      args: A
+      args: ExactArgs<A, UserFindUniqueArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['user'], A, 'findUnique'> | null, PrismaFindError>
 
     findUniqueOrThrow: <A extends UserFindUniqueOrThrowArgs>(
-      args: A
+      args: ExactArgs<A, UserFindUniqueOrThrowArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['user'], A, 'findUniqueOrThrow'>, PrismaFindOrThrowError>
 
     findFirst: <A extends UserFindFirstArgs>(
-      args: A
+      args: ExactArgs<A, UserFindFirstArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['user'], A, 'findFirst'> | null, PrismaFindError>
 
     findFirstOrThrow: <A extends UserFindFirstOrThrowArgs>(
-      args: A
+      args: ExactArgs<A, UserFindFirstOrThrowArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['user'], A, 'findFirstOrThrow'>, PrismaFindOrThrowError>
 
     findMany: <A extends UserFindManyArgs>(
-      args?: A
+      args?: ExactArgs<A, UserFindManyArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['user'], A, 'findMany'>, PrismaFindError>
 
     create: <A extends UserCreateArgs>(
-      args: A
+      args: ExactArgs<A, UserCreateArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['user'], A, 'create'>, PrismaCreateError>
 
     createMany: <A extends UserCreateManyArgs>(
-      args: A
+      args: ExactArgs<A, UserCreateManyArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['user'], A, 'createMany'>, PrismaCreateError>
 
     createManyAndReturn: <A extends UserCreateManyAndReturnArgs>(
-      args: A
+      args: ExactArgs<A, UserCreateManyAndReturnArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['user'], A, 'createManyAndReturn'>, PrismaCreateError>
 
     delete: <A extends UserDeleteArgs>(
-      args: A
+      args: ExactArgs<A, UserDeleteArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['user'], A, 'delete'>, PrismaDeleteError>
 
     update: <A extends UserUpdateArgs>(
-      args: A
+      args: ExactArgs<A, UserUpdateArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['user'], A, 'update'>, PrismaUpdateError>
 
     deleteMany: <A extends UserDeleteManyArgs>(
-      args?: A
+      args?: ExactArgs<A, UserDeleteManyArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['user'], A, 'deleteMany'>, PrismaDeleteError>
 
     updateMany: <A extends UserUpdateManyArgs>(
-      args: A
+      args: ExactArgs<A, UserUpdateManyArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['user'], A, 'updateMany'>, PrismaUpdateError>
 
     updateManyAndReturn: <A extends UserUpdateManyAndReturnArgs>(
-      args: A
+      args: ExactArgs<A, UserUpdateManyAndReturnArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['user'], A, 'updateManyAndReturn'>, PrismaUpdateError>
 
     upsert: <A extends UserUpsertArgs>(
-      args: A
+      args: ExactArgs<A, UserUpsertArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['user'], A, 'upsert'>, PrismaUpdateError>
 
     count: <A extends UserCountArgs>(
-      args?: A
+      args?: ExactArgs<A, UserCountArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['user'], A, 'count'>, PrismaFindError>
 
     aggregate: <A extends UserAggregateArgs>(
-      args: A
+      args: ExactArgs<A, UserAggregateArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['user'], A, 'aggregate'>, PrismaFindError>
 
     groupBy: <A extends UserGroupByArgs>(
-      args: A
+      args: ExactArgs<A, UserGroupByArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['user'], A, 'groupBy'>, PrismaFindError>
   }
 
   post: {
     findUnique: <A extends PostFindUniqueArgs>(
-      args: A
+      args: ExactArgs<A, PostFindUniqueArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['post'], A, 'findUnique'> | null, PrismaFindError>
 
     findUniqueOrThrow: <A extends PostFindUniqueOrThrowArgs>(
-      args: A
+      args: ExactArgs<A, PostFindUniqueOrThrowArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['post'], A, 'findUniqueOrThrow'>, PrismaFindOrThrowError>
 
     findFirst: <A extends PostFindFirstArgs>(
-      args: A
+      args: ExactArgs<A, PostFindFirstArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['post'], A, 'findFirst'> | null, PrismaFindError>
 
     findFirstOrThrow: <A extends PostFindFirstOrThrowArgs>(
-      args: A
+      args: ExactArgs<A, PostFindFirstOrThrowArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['post'], A, 'findFirstOrThrow'>, PrismaFindOrThrowError>
 
     findMany: <A extends PostFindManyArgs>(
-      args?: A
+      args?: ExactArgs<A, PostFindManyArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['post'], A, 'findMany'>, PrismaFindError>
 
     create: <A extends PostCreateArgs>(
-      args: A
+      args: ExactArgs<A, PostCreateArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['post'], A, 'create'>, PrismaCreateError>
 
     createMany: <A extends PostCreateManyArgs>(
-      args: A
+      args: ExactArgs<A, PostCreateManyArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['post'], A, 'createMany'>, PrismaCreateError>
 
     createManyAndReturn: <A extends PostCreateManyAndReturnArgs>(
-      args: A
+      args: ExactArgs<A, PostCreateManyAndReturnArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['post'], A, 'createManyAndReturn'>, PrismaCreateError>
 
     delete: <A extends PostDeleteArgs>(
-      args: A
+      args: ExactArgs<A, PostDeleteArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['post'], A, 'delete'>, PrismaDeleteError>
 
     update: <A extends PostUpdateArgs>(
-      args: A
+      args: ExactArgs<A, PostUpdateArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['post'], A, 'update'>, PrismaUpdateError>
 
     deleteMany: <A extends PostDeleteManyArgs>(
-      args?: A
+      args?: ExactArgs<A, PostDeleteManyArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['post'], A, 'deleteMany'>, PrismaDeleteError>
 
     updateMany: <A extends PostUpdateManyArgs>(
-      args: A
+      args: ExactArgs<A, PostUpdateManyArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['post'], A, 'updateMany'>, PrismaUpdateError>
 
     updateManyAndReturn: <A extends PostUpdateManyAndReturnArgs>(
-      args: A
+      args: ExactArgs<A, PostUpdateManyAndReturnArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['post'], A, 'updateManyAndReturn'>, PrismaUpdateError>
 
     upsert: <A extends PostUpsertArgs>(
-      args: A
+      args: ExactArgs<A, PostUpsertArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['post'], A, 'upsert'>, PrismaUpdateError>
 
     count: <A extends PostCountArgs>(
-      args?: A
+      args?: ExactArgs<A, PostCountArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['post'], A, 'count'>, PrismaFindError>
 
     aggregate: <A extends PostAggregateArgs>(
-      args: A
+      args: ExactArgs<A, PostAggregateArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['post'], A, 'aggregate'>, PrismaFindError>
 
     groupBy: <A extends PostGroupByArgs>(
-      args: A
+      args: ExactArgs<A, PostGroupByArgs>
     ) => EffectType<PrismaNamespace.Result<BasePrismaClient['post'], A, 'groupBy'>, PrismaFindError>
   }
 }

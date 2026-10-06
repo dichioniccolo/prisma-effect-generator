@@ -166,6 +166,8 @@ const runSuite = (suite: Suite, keepDb: boolean, log: Logger) =>
     yield* runCommand("pnpm", ["exec", "prisma", "generate"], suite.dir, log);
 
     yield* typecheckGenerated(suite.dir, log);
+    // vitest strips types, so `@ts-expect-error` cases only count under tsc.
+    yield* runCommand("npx", ["tsc", "--noEmit", "-p", "."], suite.dir, log);
     yield* runCommand("pnpm", ["test"], suite.dir, log);
 
     if (!keepDb) {

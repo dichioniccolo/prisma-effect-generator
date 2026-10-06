@@ -100,7 +100,7 @@ function generateModelTypeAliases(
     "groupBy",
   ];
 
-  return models
+  const modelAliases = models
     .map((model) => {
       const modelName = model.name;
       const modelNameCamel = toCamelCase(modelName);
@@ -115,7 +115,28 @@ function generateModelTypeAliases(
       return argsAliases;
     })
     .join("\n\n");
+
+  return `${exactArgsType}\n\n${modelAliases}`;
 }
+
+/**
+ * Operation args checked like a fresh object literal at every depth, so an
+ * unknown key anywhere (\`where\`, \`data\`, \`select\`, ...) is a compile error
+ * instead of a Prisma validation error at runtime. \`A\` is still inferred
+ * from the argument, which keeps result narrowing on \`select\`/\`include\`.
+ * The second half rejects the key combinations Prisma refuses at runtime;
+ * it is \`unknown\` otherwise so the intersection collapses to \`Exact\`.
+ */
+const exactArgsType = `/**
+ * Operation args restricted to the keys Prisma accepts, at every depth.
+ * Mirrors the signature Prisma uses for client extension methods.
+ */
+type ExactArgs<A, W> = PrismaNamespace.Exact<A, W> &
+  (A extends { select: any; include: any }
+    ? "Please either choose \`select\` or \`include\`."
+    : A extends { select: any; omit: any }
+      ? "Please either choose \`select\` or \`omit\`."
+      : unknown)`;
 
 /**
  * Generate the IPrismaService interface that defines the contract for all Prisma operations.
@@ -174,79 +195,79 @@ function generatePrismaInterface(
 
       return `  ${modelNameCamel}: {
     findUnique: <A extends ${argsType("findUnique")}>(
-      args: A
+      args: ExactArgs<A, ${argsType("findUnique")}>
     ) => EffectType<PrismaNamespace.Result<${delegate}, A, 'findUnique'> | null, ${errorTypeFor("findUnique")}>
 
     findUniqueOrThrow: <A extends ${argsType("findUniqueOrThrow")}>(
-      args: A
+      args: ExactArgs<A, ${argsType("findUniqueOrThrow")}>
     ) => EffectType<PrismaNamespace.Result<${delegate}, A, 'findUniqueOrThrow'>, ${errorTypeFor("findUniqueOrThrow")}>
 
     findFirst: <A extends ${argsType("findFirst")}>(
-      args: A
+      args: ExactArgs<A, ${argsType("findFirst")}>
     ) => EffectType<PrismaNamespace.Result<${delegate}, A, 'findFirst'> | null, ${errorTypeFor("findFirst")}>
 
     findFirstOrThrow: <A extends ${argsType("findFirstOrThrow")}>(
-      args: A
+      args: ExactArgs<A, ${argsType("findFirstOrThrow")}>
     ) => EffectType<PrismaNamespace.Result<${delegate}, A, 'findFirstOrThrow'>, ${errorTypeFor("findFirstOrThrow")}>
 
     findMany: <A extends ${argsType("findMany")}>(
-      args?: A
+      args?: ExactArgs<A, ${argsType("findMany")}>
     ) => EffectType<PrismaNamespace.Result<${delegate}, A, 'findMany'>, ${errorTypeFor("findMany")}>
 
     create: <A extends ${argsType("create")}>(
-      args: A
+      args: ExactArgs<A, ${argsType("create")}>
     ) => EffectType<PrismaNamespace.Result<${delegate}, A, 'create'>, ${errorTypeFor("create")}>
 
     createMany: <A extends ${argsType("createMany")}>(
-      args: A
+      args: ExactArgs<A, ${argsType("createMany")}>
     ) => EffectType<PrismaNamespace.Result<${delegate}, A, 'createMany'>, ${errorTypeFor("createMany")}>${
       supportsManyAndReturn
         ? `
 
     createManyAndReturn: <A extends ${argsType("createManyAndReturn")}>(
-      args: A
+      args: ExactArgs<A, ${argsType("createManyAndReturn")}>
     ) => EffectType<PrismaNamespace.Result<${delegate}, A, 'createManyAndReturn'>, ${errorTypeFor("createManyAndReturn")}>`
         : ""
     }
 
     delete: <A extends ${argsType("delete")}>(
-      args: A
+      args: ExactArgs<A, ${argsType("delete")}>
     ) => EffectType<PrismaNamespace.Result<${delegate}, A, 'delete'>, ${errorTypeFor("delete")}>
 
     update: <A extends ${argsType("update")}>(
-      args: A
+      args: ExactArgs<A, ${argsType("update")}>
     ) => EffectType<PrismaNamespace.Result<${delegate}, A, 'update'>, ${errorTypeFor("update")}>
 
     deleteMany: <A extends ${argsType("deleteMany")}>(
-      args?: A
+      args?: ExactArgs<A, ${argsType("deleteMany")}>
     ) => EffectType<PrismaNamespace.Result<${delegate}, A, 'deleteMany'>, ${errorTypeFor("deleteMany")}>
 
     updateMany: <A extends ${argsType("updateMany")}>(
-      args: A
+      args: ExactArgs<A, ${argsType("updateMany")}>
     ) => EffectType<PrismaNamespace.Result<${delegate}, A, 'updateMany'>, ${errorTypeFor("updateMany")}>${
       supportsManyAndReturn
         ? `
 
     updateManyAndReturn: <A extends ${argsType("updateManyAndReturn")}>(
-      args: A
+      args: ExactArgs<A, ${argsType("updateManyAndReturn")}>
     ) => EffectType<PrismaNamespace.Result<${delegate}, A, 'updateManyAndReturn'>, ${errorTypeFor("updateManyAndReturn")}>`
         : ""
     }
 
     upsert: <A extends ${argsType("upsert")}>(
-      args: A
+      args: ExactArgs<A, ${argsType("upsert")}>
     ) => EffectType<PrismaNamespace.Result<${delegate}, A, 'upsert'>, ${errorTypeFor("upsert")}>
 
     count: <A extends ${argsType("count")}>(
-      args?: A
+      args?: ExactArgs<A, ${argsType("count")}>
     ) => EffectType<PrismaNamespace.Result<${delegate}, A, 'count'>, ${errorTypeFor("count")}>
 
     aggregate: <A extends ${argsType("aggregate")}>(
-      args: A
+      args: ExactArgs<A, ${argsType("aggregate")}>
     ) => EffectType<PrismaNamespace.Result<${delegate}, A, 'aggregate'>, ${errorTypeFor("aggregate")}>
 
     groupBy: <A extends ${argsType("groupBy")}>(
-      args: A
+      args: ExactArgs<A, ${argsType("groupBy")}>
     ) => EffectType<PrismaNamespace.Result<${delegate}, A, 'groupBy'>, ${errorTypeFor("groupBy")}>
   }`;
     })
