@@ -338,10 +338,10 @@ export const mapPrismaError = (
 };
 ```
 
-Your mapper receives errors as Prisma throws them. A failed transaction commit
-arrives as a `DriverAdapterError` (`error.name === "DriverAdapterError"`) with
-the adapter error kind in `error.cause.kind`, not as a
-`PrismaClientKnownRequestError`.
+Your mapper receives errors as Prisma throws them. A transaction commit that
+fails in the driver adapter arrives as a `DriverAdapterError`
+(`error.name === "DriverAdapterError"`) with the adapter error kind in
+`error.cause.kind`, not as a `PrismaClientKnownRequestError`.
 
 Now all operations will use your `MyPrismaError` type:
 
