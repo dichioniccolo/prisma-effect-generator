@@ -281,10 +281,11 @@ const program = Effect.gen(function* () {
 `PrismaConnectionError` covers a connection pool timeout (P2024) and the driver
 adapter errors for an unreachable server, a socket timeout, a closed
 connection and too many connections. It also covers P2036, which an adapter
-reports for any error it does not classify, so it is not always transient;
-check `error.cause.code` before retrying on it. Raw queries report adapter
-errors as P2010, and the mapper reads the adapter error kind from
-`error.cause.meta.driverAdapterError`. `PrismaClientInitializationError` and
+reports for any error it does not classify, so it is not always transient.
+Raw queries report every adapter error as P2010 and keep the adapter error in
+`error.cause.meta.driverAdapterError`; its `cause.kind` is `GenericJs` for an
+unclassified one. Check the code, or that kind for raw queries, before
+retrying. `PrismaClientInitializationError` and
 `PrismaClientUnknownRequestError` are still defects.
 
 ### Custom Error Mapping
@@ -336,6 +337,11 @@ export const mapPrismaError = (
   return new MyPrismaError({ cause: error, operation, model, code });
 };
 ```
+
+Your mapper receives errors as Prisma throws them. A failed transaction commit
+arrives as a `DriverAdapterError` (`error.name === "DriverAdapterError"`) with
+the adapter error kind in `error.cause.kind`, not as a
+`PrismaClientKnownRequestError`.
 
 Now all operations will use your `MyPrismaError` type:
 
