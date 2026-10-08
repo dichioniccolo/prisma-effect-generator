@@ -60,14 +60,20 @@ function isConnectionError(
 	);
 }
 
-// Prisma rethrows adapter errors from a transaction commit or rollback as they
-// are. Turn the connection ones into the error Prisma reports everywhere else.
+// Driver adapter error kinds a transaction commit can fail with, and the code
+// Prisma reports for each. A serialization conflict often shows up at commit.
+const commitErrorCodeByKind: ReadonlyMap<string, string> = new Map([
+	...connectionErrorCodeByKind,
+	["TransactionWriteConflict", "P2034"],
+]);
+
+// Prisma rethrows adapter errors from a transaction commit as they are. Turn
+// the ones mapped above into the error Prisma reports everywhere else.
 function fromDriverAdapterError(error: unknown): unknown {
 	if (!(error instanceof Error) || error.name !== "DriverAdapterError")
 		return error;
 	const kind = adapterErrorKind(error);
-	const code =
-		kind === undefined ? undefined : connectionErrorCodeByKind.get(kind);
+	const code = kind === undefined ? undefined : commitErrorCodeByKind.get(kind);
 	if (code === undefined) return error;
 	return new PrismaClientKnownRequestError(error.message, {
 		code,

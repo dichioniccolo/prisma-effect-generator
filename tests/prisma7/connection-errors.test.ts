@@ -1,7 +1,11 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Exit, Option } from "effect";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
-import { Prisma, PrismaConnectionError } from "./generated/effect/index.js";
+import {
+  Prisma,
+  PrismaConnectionError,
+  PrismaTransactionConflictError,
+} from "./generated/effect/index.js";
 import { Prisma as PrismaNamespace } from "./generated/client/client.js";
 
 // Prisma recognises driver adapter failures by shape: an error named
@@ -188,6 +192,72 @@ describe("connection-level errors", () => {
         }).pipe(Effect.provide(Prisma.layer({ adapter }))),
       );
       expectConnectionError(exit, "P1017", "$commit");
+      const error = Option.getOrUndefined(Exit.findErrorOption(exit));
+      expect(
+        (error as PrismaConnectionError).cause.meta?.["driverAdapterError"],
+      ).toBeInstanceOf(DriverAdapterError);
+    }),
+  );
+
+  it.effect("a link lost while rolling back keeps the original failure", () =>
+    Effect.gen(function* () {
+      const adapter = brokenAdapter(
+        { kind: "ConnectionClosed" },
+        new Set(["rollback"]),
+      );
+      const exit = yield* Effect.exit(
+        Effect.gen(function* () {
+          const prisma = yield* Prisma;
+          return yield* prisma.$transaction(
+            prisma
+              .$queryRaw(PrismaNamespace.sql`SELECT 1`)
+              .pipe(Effect.andThen(Effect.fail("boom"))),
+          );
+        }).pipe(Effect.provide(Prisma.layer({ adapter }))),
+      );
+      // Prisma ignores the rollback error and rejects with the body's failure.
+      expect(exit).toStrictEqual(Exit.fail("boom"));
+    }),
+  );
+
+  it.effect("a write conflict at commit fails typed", () =>
+    Effect.gen(function* () {
+      const adapter = brokenAdapter(
+        { kind: "TransactionWriteConflict" },
+        new Set(["commit"]),
+      );
+      const exit = yield* Effect.exit(
+        Effect.gen(function* () {
+          const prisma = yield* Prisma;
+          return yield* prisma.$transaction(
+            prisma.$queryRaw(PrismaNamespace.sql`SELECT 1`),
+          );
+        }).pipe(Effect.provide(Prisma.layer({ adapter }))),
+      );
+      const error = Option.getOrUndefined(Exit.findErrorOption(exit));
+      expect(error).toBeInstanceOf(PrismaTransactionConflictError);
+      expect((error as PrismaTransactionConflictError).operation).toBe(
+        "$commit",
+      );
+    }),
+  );
+
+  it.effect("an unmapped adapter error at commit is still a defect", () =>
+    Effect.gen(function* () {
+      const adapter = brokenAdapter(
+        { kind: "sqlite", extendedCode: 1, message: "disk I/O error" },
+        new Set(["commit"]),
+      );
+      const exit = yield* Effect.exit(
+        Effect.gen(function* () {
+          const prisma = yield* Prisma;
+          return yield* prisma.$transaction(
+            prisma.$queryRaw(PrismaNamespace.sql`SELECT 1`),
+          );
+        }).pipe(Effect.provide(Prisma.layer({ adapter }))),
+      );
+      expect(Option.isNone(Exit.findErrorOption(exit))).toBe(true);
+      expect(Exit.hasDies(exit)).toBe(true);
     }),
   );
 
