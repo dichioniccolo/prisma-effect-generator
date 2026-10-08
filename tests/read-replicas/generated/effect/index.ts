@@ -24,6 +24,41 @@ function isPrismaClientKnownRequestError(
 	return error instanceof PrismaClientKnownRequestError;
 }
 
+// Codes that mean the database link failed, not the query: P2024 is a pool
+// timeout, the rest come from driver adapters (DatabaseNotReachable,
+// SocketTimeout, ConnectionClosed, GenericJs, TooManyConnections)
+const connectionErrorCodes: ReadonlySet<string> = new Set([
+	"P1001",
+	"P1008",
+	"P1017",
+	"P2024",
+	"P2036",
+	"P2037",
+]);
+const connectionErrorKinds: ReadonlySet<string> = new Set([
+	"DatabaseNotReachable",
+	"SocketTimeout",
+	"ConnectionClosed",
+	"GenericJs",
+	"TooManyConnections",
+]);
+
+function isConnectionError(
+	error: PrismaNamespace.PrismaClientKnownRequestError,
+): boolean {
+	if (connectionErrorCodes.has(error.code)) return true;
+	// Raw queries report every driver adapter error as P2010 and keep it in meta
+	const adapterError = error.meta?.["driverAdapterError"] as
+		| { cause?: { kind?: unknown } }
+		| undefined;
+	const kind = adapterError?.cause?.kind;
+	return (
+		error.code === "P2010" &&
+		typeof kind === "string" &&
+		connectionErrorKinds.has(kind)
+	);
+}
+
 // ============================================================================
 // Type aliases for model operations (performance optimization)
 // These are computed once and reused, reducing TypeScript's type-checking workload
@@ -528,6 +563,9 @@ const mapError = (
 	model: string,
 ): PrismaError => {
 	if (isPrismaClientKnownRequestError(error)) {
+		if (isConnectionError(error)) {
+			return new PrismaConnectionError({ cause: error, operation, model });
+		}
 		const knownError = error;
 		switch (knownError.code) {
 			case "P2000":
@@ -580,8 +618,6 @@ const mapError = (
 					operation,
 					model,
 				});
-			case "P2024":
-				return new PrismaConnectionError({ cause: error, operation, model });
 			case "P2025":
 				return new PrismaRecordNotFoundError({
 					cause: error,
@@ -609,6 +645,9 @@ const mapCreateError = (
 	model: string,
 ): PrismaCreateError => {
 	if (isPrismaClientKnownRequestError(error)) {
+		if (isConnectionError(error)) {
+			return new PrismaConnectionError({ cause: error, operation, model });
+		}
 		const knownError = error;
 		switch (knownError.code) {
 			case "P2000":
@@ -655,8 +694,6 @@ const mapCreateError = (
 					operation,
 					model,
 				});
-			case "P2024":
-				return new PrismaConnectionError({ cause: error, operation, model });
 			case "P2034":
 				return new PrismaTransactionConflictError({
 					cause: error,
@@ -675,6 +712,9 @@ const mapUpdateError = (
 	model: string,
 ): PrismaUpdateError => {
 	if (isPrismaClientKnownRequestError(error)) {
+		if (isConnectionError(error)) {
+			return new PrismaConnectionError({ cause: error, operation, model });
+		}
 		const knownError = error;
 		switch (knownError.code) {
 			case "P2000":
@@ -727,8 +767,6 @@ const mapUpdateError = (
 					operation,
 					model,
 				});
-			case "P2024":
-				return new PrismaConnectionError({ cause: error, operation, model });
 			case "P2025":
 				return new PrismaRecordNotFoundError({
 					cause: error,
@@ -753,6 +791,9 @@ const mapDeleteError = (
 	model: string,
 ): PrismaDeleteError => {
 	if (isPrismaClientKnownRequestError(error)) {
+		if (isConnectionError(error)) {
+			return new PrismaConnectionError({ cause: error, operation, model });
+		}
 		const knownError = error;
 		switch (knownError.code) {
 			case "P2003":
@@ -767,8 +808,6 @@ const mapDeleteError = (
 					operation,
 					model,
 				});
-			case "P2024":
-				return new PrismaConnectionError({ cause: error, operation, model });
 			case "P2025":
 				return new PrismaRecordNotFoundError({
 					cause: error,
@@ -793,10 +832,11 @@ const mapFindOrThrowError = (
 	model: string,
 ): PrismaFindOrThrowError => {
 	if (isPrismaClientKnownRequestError(error)) {
+		if (isConnectionError(error)) {
+			return new PrismaConnectionError({ cause: error, operation, model });
+		}
 		const knownError = error;
 		switch (knownError.code) {
-			case "P2024":
-				return new PrismaConnectionError({ cause: error, operation, model });
 			case "P2025":
 				return new PrismaRecordNotFoundError({
 					cause: error,
@@ -814,12 +854,8 @@ const mapFindError = (
 	operation: string,
 	model: string,
 ): PrismaFindError => {
-	if (isPrismaClientKnownRequestError(error)) {
-		const knownError = error;
-		switch (knownError.code) {
-			case "P2024":
-				return new PrismaConnectionError({ cause: error, operation, model });
-		}
+	if (isPrismaClientKnownRequestError(error) && isConnectionError(error)) {
+		return new PrismaConnectionError({ cause: error, operation, model });
 	}
 	throw error;
 };
@@ -831,6 +867,9 @@ const mapDeleteManyError = (
 	model: string,
 ): PrismaDeleteManyError => {
 	if (isPrismaClientKnownRequestError(error)) {
+		if (isConnectionError(error)) {
+			return new PrismaConnectionError({ cause: error, operation, model });
+		}
 		const knownError = error;
 		switch (knownError.code) {
 			case "P2003":
@@ -845,8 +884,6 @@ const mapDeleteManyError = (
 					operation,
 					model,
 				});
-			case "P2024":
-				return new PrismaConnectionError({ cause: error, operation, model });
 			case "P2034":
 				return new PrismaTransactionConflictError({
 					cause: error,
@@ -865,6 +902,9 @@ const mapUpdateManyError = (
 	model: string,
 ): PrismaUpdateManyError => {
 	if (isPrismaClientKnownRequestError(error)) {
+		if (isConnectionError(error)) {
+			return new PrismaConnectionError({ cause: error, operation, model });
+		}
 		const knownError = error;
 		switch (knownError.code) {
 			case "P2000":
@@ -904,8 +944,6 @@ const mapUpdateManyError = (
 					operation,
 					model,
 				});
-			case "P2024":
-				return new PrismaConnectionError({ cause: error, operation, model });
 			case "P2034":
 				return new PrismaTransactionConflictError({
 					cause: error,
