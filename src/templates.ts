@@ -1358,18 +1358,44 @@ function isPrismaClientKnownRequestError(error: unknown): error is PrismaNamespa
   return error instanceof PrismaClientKnownRequestError
 }
 
-// Codes that mean the database link failed, not the query: P2024 is a pool
-// timeout, the rest come from driver adapters (DatabaseNotReachable,
-// SocketTimeout, ConnectionClosed, GenericJs, TooManyConnections)
-const connectionErrorCodes: ReadonlySet<string> = new Set(["P1001", "P1008", "P1017", "P2024", "P2036", "P2037"])
-const connectionErrorKinds: ReadonlySet<string> = new Set(["DatabaseNotReachable", "SocketTimeout", "ConnectionClosed", "GenericJs", "TooManyConnections"])
+// Driver adapter error kinds that mean the database link failed, not the
+// query, with the code Prisma reports for each. GenericJs is any other error
+// thrown inside the adapter.
+const connectionErrorCodeByKind: ReadonlyMap<string, string> = new Map([
+  ["DatabaseNotReachable", "P1001"],
+  ["SocketTimeout", "P1008"],
+  ["ConnectionClosed", "P1017"],
+  ["GenericJs", "P2036"],
+  ["TooManyConnections", "P2037"],
+])
+// P2024 is a connection pool timeout
+const connectionErrorCodes: ReadonlySet<string> = new Set([...connectionErrorCodeByKind.values(), "P2024"])
+
+// The kind of a driver adapter error, which keeps it in \`cause.kind\`
+function adapterErrorKind(error: unknown): string | undefined {
+  const kind = (error as { cause?: { kind?: unknown } } | null | undefined)?.cause?.kind
+  return typeof kind === "string" ? kind : undefined
+}
 
 function isConnectionError(error: PrismaNamespace.PrismaClientKnownRequestError): boolean {
   if (connectionErrorCodes.has(error.code)) return true
   // Raw queries report every driver adapter error as P2010 and keep it in meta
-  const adapterError = error.meta?.["driverAdapterError"] as { cause?: { kind?: unknown } } | undefined
-  const kind = adapterError?.cause?.kind
-  return error.code === "P2010" && typeof kind === "string" && connectionErrorKinds.has(kind)
+  const kind = adapterErrorKind(error.meta?.["driverAdapterError"])
+  return error.code === "P2010" && kind !== undefined && connectionErrorCodeByKind.has(kind)
+}
+
+// Prisma rethrows adapter errors from a transaction commit or rollback as they
+// are. Turn the connection ones into the error Prisma reports everywhere else.
+function fromDriverAdapterError(error: unknown): unknown {
+  if (!(error instanceof Error) || error.name !== "DriverAdapterError") return error
+  const kind = adapterErrorKind(error)
+  const code = kind === undefined ? undefined : connectionErrorCodeByKind.get(kind)
+  if (code === undefined) return error
+  return new PrismaClientKnownRequestError(error.message, {
+    code,
+    clientVersion: PrismaNamespace.prismaVersion.client,
+    meta: { driverAdapterError: error },
+  })
 }
 
 // ============================================================================
@@ -1629,7 +1655,8 @@ export type PrismaError =
   | PrismaTransactionConflictError
 
 // Generic mapper for raw operations and fallback
-const mapError = (error: unknown, operation: string, model: string): PrismaError => {
+const mapError = (cause: unknown, operation: string, model: string): PrismaError => {
+  const error = fromDriverAdapterError(cause)
   if (isPrismaClientKnownRequestError(error)) {
     if (isConnectionError(error)) {
       return new PrismaConnectionError({ cause: error, operation, model });

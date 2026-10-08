@@ -275,8 +275,17 @@ const program = Effect.gen(function* () {
 | `PrismaRelationViolationError` | P2014 | Relation constraint violation |
 | `PrismaRelatedRecordNotFoundError` | P2015, P2018 | Related record not found |
 | `PrismaValueOutOfRangeError` | P2020 | Value out of range |
-| `PrismaConnectionError` | P1001, P1008, P1017, P2024, P2036, P2037 | Database link failed: pool timeout, or a driver adapter reporting the server unreachable, a socket timeout, a closed connection, too many connections or an adapter-side failure. Raw queries report these as P2010; the mapper reads the adapter error kind from `meta` |
+| `PrismaConnectionError` | P1001, P1008, P1017, P2024, P2036, P2037 | Database link failed |
 | `PrismaTransactionConflictError` | P2034 | Transaction conflict (retry) |
+
+`PrismaConnectionError` covers a connection pool timeout (P2024) and the driver
+adapter errors for an unreachable server, a socket timeout, a closed
+connection and too many connections. It also covers P2036, which an adapter
+reports for any error it does not classify, so it is not always transient;
+check `error.cause.code` before retrying on it. Raw queries report adapter
+errors as P2010, and the mapper reads the adapter error kind from
+`error.cause.meta.driverAdapterError`. `PrismaClientInitializationError` and
+`PrismaClientUnknownRequestError` are still defects.
 
 ### Custom Error Mapping
 
