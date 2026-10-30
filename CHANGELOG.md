@@ -1,5 +1,11 @@
 # prisma-generator-effect
 
+## 2.1.2
+
+### Patch Changes
+
+- [#38](https://github.com/dichioniccolo/prisma-effect-generator/pull/38) [`a1c5b59`](https://github.com/dichioniccolo/prisma-effect-generator/commit/a1c5b59a5ddaaca314c47a23f18e3d8ac18f4f5b) Thanks [@dichioniccolo](https://github.com/dichioniccolo)! - Upgrade `effect` and `@effect/platform-node` to 4.1.0.
+
 ## 2.1.1
 
 ### Patch Changes
