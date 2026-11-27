@@ -1,7 +1,5 @@
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Layer, Path } from "effect";
-import { FormatError } from "../../src/errors.js";
-import { CodeFormatter } from "../../src/formatter.js";
 import { type GenerateInput, generate } from "../../src/generate.js";
 import { OutputWriter } from "../../src/output.js";
 import { memoryFileSystem } from "./memoryFileSystem.js";
@@ -24,13 +22,12 @@ const input = (
 // The real OutputWriter over an in-memory FileSystem. Path.layer is the
 // POSIX implementation shipped with effect, so paths match on every OS.
 const run = <A, E>(
-  effect: Effect.Effect<A, E, OutputWriter | Path.Path | CodeFormatter>,
+  effect: Effect.Effect<A, E, OutputWriter | Path.Path>,
   fs: ReturnType<typeof memoryFileSystem>,
-  formatter = CodeFormatter.noop,
 ) =>
   effect.pipe(
     Effect.provide(
-      Layer.mergeAll(OutputWriter.layer, formatter).pipe(
+      OutputWriter.layer.pipe(
         Layer.provideMerge(Layer.mergeAll(fs.layer, Path.layer)),
       ),
     ),
@@ -97,20 +94,6 @@ describe("generate", () => {
 
       expect(error._tag).toBe("FileWriteError");
       expect(error).toMatchObject({ path: `${output}/index.ts` });
-    }),
-  );
-
-  it.effect("keeps the unformatted file when formatting fails", () =>
-    Effect.gen(function* () {
-      const fs = memoryFileSystem();
-      const failingFormatter = Layer.succeed(CodeFormatter, {
-        format: (path) =>
-          Effect.fail(new FormatError({ path, reason: "offline" })),
-      });
-
-      yield* run(generate(input({})), fs, failingFormatter);
-
-      expect(fs.files.has(`${output}/index.ts`)).toBe(true);
     }),
   );
 });

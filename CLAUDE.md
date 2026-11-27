@@ -27,8 +27,8 @@ Node (see `.nvmrc`) and pnpm. Effect v4 (`effect`, `@effect/platform-node`,
 - `src/options.ts`: the `generator` block decoded with `Schema`.
 - `src/errors.ts`: `Schema.TaggedError` failures and their user-facing
   messages.
-- `src/output.ts`, `src/formatter.ts`: `OutputWriter` and `CodeFormatter`
-  services (disk and Biome).
+- `src/output.ts`: the `OutputWriter` service, the only code that writes to
+  disk. Generated files are written as rendered; nothing formats them.
 - `src/templates.ts`: the pure templating. Strings in, strings out; data
   types like `Option` are fine, effects are not.
 - `tests/unit/`: unit tests, with an in-memory `FileSystem` and file
@@ -43,8 +43,8 @@ Node (see `.nvmrc`) and pnpm. Effect v4 (`effect`, `@effect/platform-node`,
 - Prisma speaks JSON-RPC over the generator's stderr and parses every line
   written there. Logs stay plain logfmt on stderr, never JSON.
 - Nothing in `src/` imports `node:*`. Code reaches the platform through
-  `FileSystem`, `Path` and `ChildProcessSpawner`; only `src/index.ts`
-  provides the Node layers.
+  `FileSystem` and `Path`; only `src/index.ts` provides the Node layers.
+  The generator spawns no child processes.
 
 ## Effect Agent Setup
 

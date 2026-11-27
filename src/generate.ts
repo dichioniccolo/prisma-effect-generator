@@ -1,6 +1,5 @@
 import type { GeneratorConfig } from "@prisma/generator-helper";
 import { Effect, Option, Path, Schema } from "effect";
-import { CodeFormatter } from "./formatter.js";
 import {
   decodeGeneratorSettings,
   ErrorImport,
@@ -78,27 +77,6 @@ export const renderFiles = (
   }),
 ];
 
-/** Formats each file, downgrading failures to warnings as before. */
-const formatFiles = Effect.fn("formatFiles")(function* (
-  files: ReadonlyArray<string>,
-) {
-  const formatter = yield* CodeFormatter;
-  yield* Effect.forEach(
-    files,
-    (file) =>
-      formatter
-        .format(file)
-        .pipe(
-          Effect.catchTag("FormatError", (error) =>
-            Effect.logWarning(
-              `Failed to format generated code with Biome: ${error.reason}`,
-            ).pipe(Effect.annotateLogs("file", error.path)),
-          ),
-        ),
-    { discard: true },
-  );
-});
-
 /** The whole of `prisma generate` for this generator. */
 export const generate = Effect.fn("generate")(function* (
   options: GenerateInput,
@@ -114,8 +92,7 @@ export const generate = Effect.fn("generate")(function* (
   );
 
   const writer = yield* OutputWriter;
-  const written = yield* writer.write(settings.output, files);
-  yield* formatFiles(written);
+  yield* writer.write(settings.output, files);
 
   yield* Effect.logInfo(
     `generated ${options.dmmf.datamodel.models.length} models into ${settings.output}`,

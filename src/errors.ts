@@ -43,19 +43,6 @@ export class FileWriteError extends Schema.TaggedError<FileWriteError>()(
   { description: "A generated file could not be written." },
 ) {}
 
-/**
- * The generated code could not be formatted. Never fatal: the generator
- * leaves the file unformatted and logs a warning.
- */
-export class FormatError extends Schema.TaggedError<FormatError>()(
-  "FormatError",
-  {
-    path: Schema.String,
-    reason: Schema.String,
-  },
-  { description: "Formatting a generated file failed; the file is kept." },
-) {}
-
 /** Every expected way `prisma generate` can fail because of this generator. */
 export type GeneratorError =
   InvalidGeneratorConfig | OutputDirectoryError | FileWriteError;
