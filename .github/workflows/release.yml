@@ -64,7 +64,7 @@ jobs:
       # mode is on. v2 dropped that scanner. Note the inputs are kebab-case here.
       - name: Create Release Pull Request or Publish
         id: changesets
-        uses: changesets/action@fdf536a68c4154480c89b42547f8102cf0d8bc47 # v2.1.1
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
           version-script: pnpm run changeset-version
           publish-script: pnpm run changeset-publish
