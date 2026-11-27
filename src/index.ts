@@ -3,7 +3,6 @@ import { NodeServices } from "@effect/platform-node";
 import { generatorHandler } from "@prisma/generator-helper";
 import { Effect, Layer, Logger, References } from "effect";
 import { formatGeneratorError } from "./errors.js";
-import { CodeFormatter } from "./formatter.js";
 import { generate } from "./generate.js";
 import { OutputWriter } from "./output.js";
 
@@ -18,11 +17,9 @@ const StderrLogger = Layer.mergeAll(
   Layer.succeed(References.MinimumLogLevel, "Debug"),
 );
 
-const GeneratorLive = Layer.mergeAll(
-  OutputWriter.layer,
-  CodeFormatter.biome,
-  StderrLogger,
-).pipe(Layer.provideMerge(NodeServices.layer));
+const GeneratorLive = Layer.mergeAll(OutputWriter.layer, StderrLogger).pipe(
+  Layer.provideMerge(NodeServices.layer),
+);
 
 generatorHandler({
   onManifest() {
