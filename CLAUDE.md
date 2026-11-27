@@ -4,7 +4,8 @@ A Prisma generator that emits an Effect-based client: a `Prisma` service,
 layers, typed errors and transactions that carry the transactional client
 through `Context`. The generator itself also runs on Effect.
 
-Node (see `.nvmrc`) and pnpm. Effect v4 (`effect`, `@effect/platform-node`,
+Node (see `.nvmrc`) and pnpm, pinned by `packageManager` in the root and
+in each `tests/*/package.json`; bump them together. Effect v4 (`effect`, `@effect/platform-node`,
 `@effect/vitest`), pinned to the same RC version.
 
 ## Commands

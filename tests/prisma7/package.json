@@ -1,6 +1,7 @@
 {
   "name": "prisma7-tests",
   "private": true,
+  "packageManager": "pnpm@12.23.0",
   "type": "module",
   "scripts": {
     "generate": "prisma generate",
