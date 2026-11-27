@@ -8,13 +8,13 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@prisma/client": "^7.9.1",
-    "effect": "^4.1.0",
-    "prisma": "^7.9.1"
+    "@prisma/client": "^7.10.1",
+    "effect": "^4.1.6",
+    "prisma": "^7.10.1"
   },
   "devDependencies": {
-    "@effect/vitest": "^4.1.0",
+    "@effect/vitest": "^4.1.6",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.1"
+    "vitest": "^5.1.2"
   }
 }
