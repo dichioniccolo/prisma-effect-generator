@@ -1,5 +1,11 @@
 # prisma-generator-effect
 
+## 2.2.0
+
+### Minor Changes
+
+- [#42](https://github.com/dichioniccolo/prisma-effect-generator/pull/42) [`7784d0f`](https://github.com/dichioniccolo/prisma-effect-generator/commit/7784d0fee389684e28b3108c8742eb01102e6a94) Thanks [@dichioniccolo](https://github.com/dichioniccolo)! - The generated files are no longer formatted. `prisma generate` used to run `npx @biomejs/biome format --write` on every file it wrote, which cost an npx lookup on each run (about 3 s) and a full Biome download in a clean environment such as a Docker build. The generator now writes the files as rendered and starts no child process. The code itself is the same; only its layout changes (indentation, line breaks, quotes, semicolons and trailing commas). If you want the output formatted, run your own formatter on the output directory.
+
 ## 2.1.3
 
 ### Patch Changes
