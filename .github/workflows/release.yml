@@ -31,14 +31,12 @@ jobs:
           # won't trigger further workflow runs.
           persist-credentials: false
 
-      # Held at 10 deliberately. pnpm 11.0.0-11.0.8 regressed npm's OIDC trusted
-      # publishing -- `changeset publish` fails with a masked E404 on every
-      # package (pnpm/pnpm#11566). Fixed in 11.0.9+, but only alongside
-      # pnpm/action-setup v6.0.6+. The 10.x line never had the bug.
+      # The version comes from `packageManager` in package.json. Keep it at
+      # 11.0.9 or later and this action at v6.0.6 or later: pnpm 11.0.0-11.0.8
+      # broke npm's OIDC trusted publishing, and `changeset publish` failed
+      # with a masked E404 on every package (pnpm/pnpm#11566).
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
-        with:
-          version: 10
 
       # No registry-url on purpose: it makes setup-node write an .npmrc with an
       # `_authToken` line, and any static _authToken makes the client skip the
